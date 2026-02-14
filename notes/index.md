@@ -6,10 +6,10 @@ hero:
 ---
 
 <script setup>
-import { useData } from 'vitepress'
+import { useData, withBase } from 'vitepress'
 const { theme } = useData()
 
-const firstLink = theme.value.sidebar?.[0]?.items?.[0]?.link || '/'
+const firstLink = withBase(theme.value.sidebar?.[0]?.items?.[0]?.link || '/')
 </script>
 
 <div class="actions">
