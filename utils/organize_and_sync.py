@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import requests
 from google import genai
 import json
@@ -397,6 +398,10 @@ def main():
             ai_result['content'] = content
             update_notion(page_id, ai_result)
             print(f"成功存檔至: {file_path}")
+
+            # 等待 60 秒避免 Gemini API rate limit
+            print("等待 60 秒後處理下一頁...")
+            time.sleep(60)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,10 @@
+[project]
+name = "my-knowledge-base"
+version = "0.1.0"
+description = "Notion AI Organizer & Sync"
+requires-python = ">=3.9"
+dependencies = [
+    "requests",
+    "google-generativeai",
+    "mistune",
+]
