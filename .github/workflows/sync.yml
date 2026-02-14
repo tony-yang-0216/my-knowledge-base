@@ -43,3 +43,7 @@ jobs:
           # 如果沒有變動就不提交，避免報錯
           git commit -m "✨ AI Organized: Update notes from Notion" || exit 0
           git push
+
+  deploy:
+    needs: build
+    uses: ./.github/workflows/deploy.yml

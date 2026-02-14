@@ -47,6 +47,7 @@ function getFirstNoteLink() {
 
 export default withMermaid(
   defineConfig({
+    base: '/my-knowledge-base/',
     title: 'My Knowledge Base',
     description: 'Personal knowledge base powered by Notion & AI',
     themeConfig: {
