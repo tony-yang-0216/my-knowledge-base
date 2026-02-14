@@ -6,14 +6,19 @@ hero:
 ---
 
 <script setup>
-import { useData, withBase } from 'vitepress'
+import { useData, useRouter, withBase } from 'vitepress'
 const { theme } = useData()
+const router = useRouter()
 
 const firstLink = withBase(theme.value.sidebar?.[0]?.items?.[0]?.link || '/')
+
+function navigate() {
+  router.go(firstLink)
+}
 </script>
 
 <div class="actions">
-  <a class="brand-button" :href="firstLink">Start Reading</a>
+  <a class="brand-button" :href="firstLink" @click.prevent="navigate">Start Reading</a>
 </div>
 
 <style>
