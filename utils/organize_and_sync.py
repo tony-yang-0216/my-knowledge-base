@@ -97,6 +97,7 @@ def organize_with_ai(raw_text):
     2.  **專業分類 (category)**：從此清單選一：[10-Computer-Science, 20-Finance, 30-Lifestyle, 40-News, 99-Inbox]。
     3.  **層次標籤 (tags)**：提供 2-3 個關鍵標籤。標籤需具備「索引價值」，能幫助在該分類下進一步篩選（例如：在 Computer-Science 下使用 [Backend, Security]），避免使用過於細碎或口語的詞彙。
     4.  **結構化內容 (content)**：將原始內容重組為專業且易於理解的 Markdown 格式。內容應該清晰、有條理，並且適合技術讀者閱讀。請確保：
+        -   不能對於原本內容的技術細節進行刪減或簡化，必須完整保留所有重要資訊。
         -   使用專業 Markdown 語法(H1, H2, 列表, 程式碼區塊）。
         -   必須加入目錄(Table of Contents)來概覽內容架構, 並使用內部連結(Anchor Links)讓讀者能快速跳轉到各章節。
         -   適當使用粗體、斜體、行內程式碼等格式來強調重點。
