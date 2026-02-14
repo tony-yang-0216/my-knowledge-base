@@ -5,6 +5,6 @@ description = "Notion AI Organizer & Sync"
 requires-python = ">=3.9"
 dependencies = [
     "requests",
-    "google-generativeai",
+    "google-genai",
     "mistune",
 ]
