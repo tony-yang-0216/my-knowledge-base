@@ -5,6 +5,7 @@ import requests
 from google import genai
 import json
 import mistune
+from categories import get_categories_prompt
 
 # 1. 環境變數設定 (從 GitHub Secrets 讀取)
 NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
@@ -89,12 +90,13 @@ def get_page_content(page_id):
     return text
 
 def organize_with_ai(raw_text):
+    categories_text = get_categories_prompt()
     prompt = f"""
     你是一位資深技術架構師與知識管理專家。請針對提供的原始對話進行「深度知識內化」，並嚴格遵守以下任務與格式：
 
     ### 任務說明：
     1.  **簡潔標題 (title)**：提取核心概念，建立一個一眼就能明瞭的簡潔專業技術標題（例如：從「聊聊 JWT」優化為「JWT 身分驗證機制與安全性實踐」）。
-    2.  **專業分類 (category)**：從此清單選一：[10-Computer-Science, 20-Finance, 30-Lifestyle, 40-News, 99-Inbox]。
+    2.  **專業分類 (category)**：根據內容從以下類別中選擇最適合的一個：{categories_text}
     3.  **層次標籤 (tags)**：提供 2-3 個關鍵標籤。標籤需具備「索引價值」，能幫助在該分類下進一步篩選（例如：在 Computer-Science 下使用 [Backend, Security]），避免使用過於細碎或口語的詞彙。
     4.  **結構化內容 (content)**：將原始內容重組為專業且易於理解的 Markdown 格式。內容應該清晰、有條理，並且適合技術讀者閱讀。請確保：
         -   不能對於原本內容的技術細節進行刪減或簡化，必須完整保留所有重要資訊。
