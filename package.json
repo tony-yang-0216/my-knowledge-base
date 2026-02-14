@@ -1,0 +1,28 @@
+{
+  "name": "my-knowledge-base",
+  "version": "1.0.0",
+  "description": "An automated knowledge base synchronized from Notion via AI (Claude/Gemini), focusing on all kinds of knowledges that I am learning.",
+  "main": "index.js",
+  "scripts": {
+    "docs:dev": "vitepress dev notes",
+    "docs:build": "vitepress build notes",
+    "docs:preview": "vitepress preview notes"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tony-yang-0216/my-knowledge-base.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tony-yang-0216/my-knowledge-base/issues"
+  },
+  "homepage": "https://github.com/tony-yang-0216/my-knowledge-base#readme",
+  "devDependencies": {
+    "mermaid": "^11.12.2",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}
