@@ -200,6 +200,33 @@ def append_blocks_batched(page_id, blocks):
         batch = blocks[start:start + 100]
         notion.blocks.children.append(block_id=page_id, children=batch)
 
+def _strip_invalid_links(blocks):
+    """深度掃描所有 blocks，移除非 http/https 的 link"""
+    for block in blocks:
+        btype = block.get("type", "")
+        if not btype:
+            continue
+
+        block_data = block.get(btype, {})
+        # 1. 處理當前 block 的文本
+        if isinstance(block_data, dict) and "rich_text" in block_data:
+            for rt in block_data.get("rich_text", []):
+                text_obj = rt.get("text", {})
+                link = text_obj.get("link")
+                if link:
+                    url = link.get("url", "")
+                    if not (url.startswith("http://") or url.startswith("https://")):
+                        text_obj["link"] = None
+                        rt["href"] = None
+
+        # 2. 處理子 blocks (例如 Nested Lists, Toggle 等)
+        # 注意：有些 SDK 版本 children 是直接掛在 block 下，有些是在 block_data 裡
+        children = block_data.get("children") or block.get("children", [])
+        if children:
+            _strip_invalid_links(children)
+
+    return blocks
+
 def postprocess_blocks(blocks):
     """過濾 markdown TOC，插入 Notion 原生 TOC"""
     filtered = []
@@ -234,6 +261,7 @@ def update_notion(page_id, ai_data):
 
     md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', ai_data["content"])
     content_blocks = parse_markdown_to_notion_blocks(md_text)
+    content_blocks = _strip_invalid_links(content_blocks)
     content_blocks = postprocess_blocks(content_blocks)
     append_blocks_batched(page_id, content_blocks)
 
