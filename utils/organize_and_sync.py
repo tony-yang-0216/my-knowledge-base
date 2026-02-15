@@ -25,8 +25,8 @@ def get_draft_pages():
     has_more = True
     start_cursor = None
     while has_more:
-        response = notion.databases.query(
-            database_id=DATABASE_ID,
+        response = notion.data_sources.query(
+            data_source_id=DATABASE_ID,
             filter={"property": "Status", "status": {"equals": "Draft"}},
             start_cursor=start_cursor
         )
