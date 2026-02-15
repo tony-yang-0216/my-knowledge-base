@@ -55,13 +55,13 @@ def _paginate_blocks(block_id):
     start_cursor = None
     while has_more:
         response = notion.blocks.children.list(
-            block_id=block_id, start_cursor=start_cursor
+            block_id=block_id,
+            start_cursor=start_cursor,
+            page_size=100
         )
         results.extend(response.get("results", []))
         has_more = response.get("has_more", False)
         start_cursor = response.get("next_cursor")
-        if has_more:
-            time.sleep(0.3)
     return results
 
 def get_page_content(page_id):
@@ -186,9 +186,18 @@ def update_page_properties(page_id, ai_data):
 
 
 def delete_all_blocks(page_id):
-    block_ids = [b["id"] for b in _paginate_blocks(page_id)]
-    for bid in block_ids:
-        notion.blocks.delete(block_id=bid)
+    """刪除頁面內的所有頂層區塊"""
+    blocks = _paginate_blocks(page_id)
+    for b in blocks:
+        bid = b["id"]
+        try:
+            notion.blocks.delete(block_id=bid)
+        except Exception as e:
+            if "archived" in str(e).lower():
+                continue
+            else:
+                print(f"⚠️ 刪除區塊 {bid} 時發生非預期錯誤: {e}")
+                raise
 
 def _chunk_text(text, size=2000):
     """將文字切成不超過 size 的片段（Notion rich_text 上限 2000 字元）"""
@@ -241,18 +250,23 @@ def postprocess_blocks(blocks):
 
     for block in blocks:
         btype = block.get("type", "")
-        
+        if not btype:
+            continue
+
+        # 安全地取得該 block 的內容資料
+        block_data = block.get(btype, {})
+
         # A. 偵測目錄標題 (H1, H2, 或 H3)
         if btype.startswith("heading_"):
-            rich_text = block[btype].get("rich_text", [])
+            rich_text = block_data.get("rich_text", [])
             text = "".join(t.get("plain_text", "") for t in rich_text).strip().lower()
-            
+
             # 如果標題包含關鍵字，開啟「跳過模式」
             if any(k in text for k in toc_keywords):
                 skip_toc = True
-                print(f"🗑️ 偵測到假目錄標題: '{text}'，開始過濾內容...")
+                print(f"🗑️ 偵測到假目錄標題: '{text}'，開始跳過後續列表...")
                 continue
-        
+
         # B. 跳過模式：連續跳過清單項目 (假目錄的內容)
         if skip_toc:
             if btype in ("bulleted_list_item", "numbered_list_item"):
@@ -260,7 +274,7 @@ def postprocess_blocks(blocks):
             else:
                 # 遇到非列表區塊，代表假目錄結束，關閉跳過模式
                 skip_toc = False
-        
+
         filtered.append(block)
 
     # C. 插入 Notion 原生 TOC (Table of Contents)
@@ -487,6 +501,7 @@ def _restore_code_languages(blocks):
     """還原 code block 語言名稱中的底線為空格（例如 plain_text → plain text）。"""
     lang_restore_map = {
         'plain_text': 'plain text',
+        'text': 'plain text',
     }
     for block in blocks:
         if block.get('type') == 'code':
@@ -638,6 +653,27 @@ def main():
     if has_any_error:
         print("🚨 部分頁面處理失敗，請檢查 Log。")
         sys.exit(1) # 讓 GitHub Action 報錯
+
+
+# def read_md_from_note(file_path):
+#     """從本地 notes 資料夾讀取 md 檔案內容"""
+#     with open(file_path, "r", encoding="utf-8") as f:
+#         return f.read()
+
+
+# if __name__ == "__main__":
+#     page_id = "dbd86d185388478db501581036f3a042"
+#     raw_content = "fake raw content for testing"
+
+#     # 從本地 md 讀取 content
+#     md_path = os.path.join(NOTES_DIR, "10-Computer-Science", "Claude AI 知識內化與 LLM Context Token 優化策略.md")
+#     content = read_md_from_note(md_path)
+#     ai_result = {"content": content}
+
+#     print(f"讀取內容長度: {len(content)} 字元")
+#     print(f"開始測試 update_notion_blocks_only...")
+#     update_notion_blocks_only(page_id, ai_result, raw_content)
+#     print("測試完成！")
 
 
 if __name__ == "__main__":

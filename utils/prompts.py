@@ -15,7 +15,7 @@ ORGANIZE_PROMPT = """
     -   **補充說明**：必要時加入說明性文字補充原始內容不足處，確保讀者能完全理解技術細節。
 
     #### B. 視覺化規則（嚴格遵守）：
-    -   **禁止 ASCII 繪圖**：禁止使用 ASCII box-drawing 字元（┌ ─ ┐ │ └ ┘ ├ ┤ ╔ ═ ╗ ║ ╚ ╝）繪製任何圖表、框架圖或流程圖。
+    -   **禁止 ASCII 繪圖**：禁止使用 ASCII box-drawing 字元（| ┌ ─ ┐ │ └ ┘ ├ ┤ ╔ ═ ╗ ║ ╚ ╝）繪製任何圖表、框架圖或流程圖。
     -   **流程與架構圖**：涉及流程、架構、層級關係或交互時，必須使用 **Mermaid.js** 語法（graph/sequenceDiagram/flowchart）。如果流程複雜，請拆解為多個步驟分別附圖。
     -   **簡單列舉與對比**：使用 Markdown table 或 bullet list，禁止用 ASCII 框線模擬表格。
     -   **Mermaid 語法規則**：每個箭頭語句必須在同一行完成；標籤文字避免使用逗號或括號（用空格或破折號取代）；禁止使用 Unicode 符號。
@@ -28,6 +28,12 @@ ORGANIZE_PROMPT = """
     -   **表格規範**：Markdown 表格必須包含完整的標題行與分隔線（如 `|---|---|`），確保列數一致。
     -   **排版禁忌**：禁止使用 Unicode 特殊符號（如 ┌, ─, ┤）。請使用標準 Markdown (H1, H2, H3, 粗體, 行內程式碼)。
     -   **程式碼區塊語言標籤**：語言名稱不可包含空格。使用 `text` 而非 `plain text`，使用 `csharp` 而非 `c#`。
+
+### ⚠️ 格式禁令 (CRITICAL)：
+-   **絕對禁止**使用 ASCII box-drawing 字元（┌ ─ ┐ │ └ ┘ ├ ┤ ╔ ═ ╗ ║ ╚ ╝ ╰ ╮ ╭ ╯ 以及 U+2500-U+257F 範圍內的所有字元）來繪製任何圖表、框圖或流程圖。
+-   任何需要視覺化呈現的架構、流程、層級關係，**一律使用 Mermaid.js 語法**（graph/flowchart/sequenceDiagram）取代。
+-   簡單的組成結構或對比，使用 Markdown table 或 bullet list。
+-   違反此規則將導致 Notion 同步失敗，此為最高優先級規則。
 
 ### 輸出限制：
 -   必須嚴格輸出合法的 JSON 格式。
