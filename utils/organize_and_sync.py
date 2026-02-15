@@ -338,13 +338,18 @@ def update_notion(page_id, ai_data):
             "Updated Time": {"date": {"start": now}}
         }
     }
-    requests.patch(url, json=properties, headers=headers)
+    res = requests.patch(url, json=properties, headers=headers)
+    if res.status_code != 200:
+        print(f"[!] 更新屬性失敗: {res.status_code}, {res.text}")
 
     # 先刪除頁面原有的所有 blocks
     children_url = f"https://api.notion.com/v1/blocks/{page_id}/children"
     existing = requests.get(children_url, headers=headers).json().get("results", [])
+    print(f"刪除 {len(existing)} 個舊 blocks...")
     for block in existing:
-        requests.delete(f"https://api.notion.com/v1/blocks/{block['id']}", headers=headers)
+        res = requests.delete(f"https://api.notion.com/v1/blocks/{block['id']}", headers=headers)
+        if res.status_code != 200:
+            print(f"[!] 刪除 block 失敗: {res.status_code}, {res.text}")
 
     # 將 Markdown 轉成 Notion blocks（for_notion=True 會自動過濾 TOC 和 HTML anchors）
     content_blocks = markdown_to_notion_blocks(ai_data["content"], for_notion=True)
@@ -358,24 +363,24 @@ def update_notion(page_id, ai_data):
             break
     content_blocks.insert(insert_idx, toc_block)
     all_blocks = content_blocks
+    print(f"寫入 {len(all_blocks)} 個新 blocks...")
 
     # Notion API 一次最多 100 個 blocks，分批送出
     for start in range(0, len(all_blocks), 100):
         batch = all_blocks[start:start + 100]
-        requests.patch(children_url, json={"children": batch}, headers=headers)
+        res = requests.patch(children_url, json={"children": batch}, headers=headers)
+        if res.status_code != 200:
+            print(f"[!] 寫入 blocks 失敗 (batch {start}): {res.status_code}, {res.text[:500]}")
 
 # 執行主流程
 def main():
     pages = get_draft_pages()
     for page in pages:
         page_id = page["id"]
-        print(f"正在處理: {page_id}")
         raw_content = get_page_content(page_id)
-        print(f"原始內容:\n{raw_content}\n{'-'*40}")
         if raw_content.strip():
             # AI 處理
             ai_result = organize_with_ai(raw_content)
-            # print(f"AI 整理結果:\n{json.dumps(ai_result, indent=2, ensure_ascii=False)}\n{'='*60}")
             
             # 建立資料夾並存檔至 GitHub
             category_dir = f"{NOTES_DIR}/{ai_result['category']}"
