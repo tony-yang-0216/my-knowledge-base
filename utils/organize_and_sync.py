@@ -308,7 +308,7 @@ def _fix_malformed_tables(md_text):
             return
 
         # 檢查第二行是否為分隔線（|---|---|）
-        delimiter_re = re.compile(r'^\|[\s-]+(\|[\s-]+)*\|$')
+        delimiter_re = re.compile(r'^\|[\s:\-]+(\|[\s:\-]+)*\|$')
         if not delimiter_re.match(table_buf[1].strip()):
             # 缺少分隔線，根據第一行欄數自動補齊
             col_count = table_buf[0].count('|') - 1
@@ -494,7 +494,23 @@ def _normalize_code_fences(md_text):
         lang = m.group(1).strip()
         normalized = lang.replace(' ', '_')
         return f'```{normalized}\n'
-    return re.sub(r'```([ \w]+)\n', _replace_lang, md_text)
+    md_text = re.sub(r'```([ \w]+)\n', _replace_lang, md_text)
+    # 補上 bare ``` (無語言) 的預設語言，避免 md2notionpage 無法解析
+    # 只替換 opening fence（非 closing fence）：用狀態追蹤配對
+    lines = md_text.split('\n')
+    in_code = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith('```'):
+            if not in_code:
+                # opening fence：如果是 bare ```，補上 text
+                if stripped == '```':
+                    lines[i] = line.replace('```', '```text', 1)
+                in_code = True
+            else:
+                # closing fence
+                in_code = False
+    return '\n'.join(lines)
 
 
 def _restore_code_languages(blocks):
