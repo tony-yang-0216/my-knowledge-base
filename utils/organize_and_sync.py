@@ -33,8 +33,15 @@ def get_draft_pages():
 
 def get_page_content(page_id):
     url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    res = requests.get(url, headers=headers)
-    blocks = res.json().get("results", [])
+    blocks = []
+    params = {}
+    while True:
+        res = requests.get(url, headers=headers, params=params)
+        data = res.json()
+        blocks.extend(data.get("results", []))
+        if not data.get("has_more"):
+            break
+        params["start_cursor"] = data["next_cursor"]
     text = ""
     for block in blocks:
         btype = block["type"]
@@ -146,6 +153,8 @@ def organize_with_ai(raw_text):
         content = ""
         if content_match:
             content = content_match.group(1).rstrip().rstrip('}').rstrip().rstrip('"')
+            # regex fallback 拿到的是 JSON 原始字串，需手動處理轉義
+            content = content.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\').replace('\\t', '\t')
         tag_list = []
         if tags:
             tag_list = [t.strip().strip('"') for t in tags.group(1).split(',')]
@@ -342,9 +351,17 @@ def update_notion(page_id, ai_data):
     if res.status_code != 200:
         print(f"[!] 更新屬性失敗: {res.status_code}, {res.text}")
 
-    # 先刪除頁面原有的所有 blocks
+    # 先刪除頁面原有的所有 blocks（處理分頁）
     children_url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    existing = requests.get(children_url, headers=headers).json().get("results", [])
+    existing = []
+    params = {}
+    while True:
+        r = requests.get(children_url, headers=headers, params=params)
+        data = r.json()
+        existing.extend(data.get("results", []))
+        if not data.get("has_more"):
+            break
+        params["start_cursor"] = data["next_cursor"]
     print(f"刪除 {len(existing)} 個舊 blocks...")
     for block in existing:
         res = requests.delete(f"https://api.notion.com/v1/blocks/{block['id']}", headers=headers)
@@ -390,8 +407,7 @@ def main():
             file_path = f"{category_dir}/{safe_title}.md"
             from datetime import datetime, timezone, timedelta
             now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
-            # 將 JSON 轉義字元轉成真正的字元
-            content = ai_result['content'].replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\').replace('\\t', '\t')
+            content = ai_result['content']
 
             # Markdown 檔案：在 H1 後插入 Updated Time
             md_content = content
