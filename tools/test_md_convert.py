@@ -12,9 +12,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from organize_and_sync import (
     _fix_malformed_tables,
     _normalize_code_fences,
+    _escape_single_tildes,
     _extract_and_replace_tables,
     _replace_table_placeholders,
     _restore_code_languages,
+    _restore_tildes_in_blocks,
     _strip_invalid_links,
     postprocess_blocks,
 )
@@ -26,10 +28,12 @@ def convert_md_to_blocks(md_text):
     md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', md_text)
     md_text = _fix_malformed_tables(md_text)
     md_text = _normalize_code_fences(md_text)
+    md_text = _escape_single_tildes(md_text)
     md_text, tables_dict = _extract_and_replace_tables(md_text)
     blocks = parse_markdown_to_notion_blocks(md_text)
     blocks = _replace_table_placeholders(blocks, tables_dict)
     blocks = _restore_code_languages(blocks)
+    blocks = _restore_tildes_in_blocks(blocks)
     blocks = _strip_invalid_links(blocks)
     blocks = postprocess_blocks(blocks)
     return blocks

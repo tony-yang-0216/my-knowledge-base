@@ -375,7 +375,7 @@ def _extract_and_replace_tables(md_text):
         delimiter_re = re.compile(r'^\s*\|[\s:]*-+[\s:]*(\|[\s:]*-+[\s:]*)*\|')
         if len(table_buf) >= 2 and delimiter_re.match(table_buf[1]):
             tables_dict[counter] = list(table_buf)
-            result.append(f'TABLE_PLACEHOLDER_{counter}')
+            result.append(f'TABLEPLACEHOLDER{counter}')
             counter += 1
         else:
             # 不是有效表格，原樣保留
@@ -454,7 +454,7 @@ def _replace_table_placeholders(blocks, tables_dict):
     if not tables_dict:
         return blocks
 
-    placeholder_re = re.compile(r'^TABLE_PLACEHOLDER_(\d+)$')
+    placeholder_re = re.compile(r'^TABLEPLACEHOLDER(\d+)$')
     result = []
     for block in blocks:
         replaced = False
@@ -473,6 +473,44 @@ def _replace_table_placeholders(blocks, tables_dict):
         if not replaced:
             result.append(block)
     return result
+
+
+_TILDE_PLACEHOLDER = '\u200BTILDE\u200B'
+
+
+def _escape_single_tildes(md_text):
+    """將非成對的 ~ 替換為佔位符，防止 md2notionpage 誤判為 strikethrough。
+
+    md2notionpage 用單個 ~ 作為 strikethrough 標記，但標準 Markdown 是 ~~。
+    此函式保留 ~~（真正的 strikethrough），只轉義孤立的 ~。
+    """
+    # 先保護 ~~（標準 strikethrough）
+    md_text = md_text.replace('~~', '\x00DOUBLE_TILDE\x00')
+    # 轉義剩餘的單 ~
+    md_text = md_text.replace('~', _TILDE_PLACEHOLDER)
+    # 還原 ~~
+    md_text = md_text.replace('\x00DOUBLE_TILDE\x00', '~~')
+    return md_text
+
+
+def _restore_tildes_in_blocks(blocks):
+    """還原 blocks 中所有 rich_text 裡的波浪號佔位符。"""
+    for block in blocks:
+        btype = block.get('type', '')
+        block_data = block.get(btype, {})
+        if not isinstance(block_data, dict):
+            continue
+        for rt in block_data.get('rich_text', []):
+            text_obj = rt.get('text', {})
+            if 'content' in text_obj:
+                text_obj['content'] = text_obj['content'].replace(_TILDE_PLACEHOLDER, '~')
+            if 'plain_text' in rt:
+                rt['plain_text'] = rt['plain_text'].replace(_TILDE_PLACEHOLDER, '~')
+        # 遞迴處理子 blocks
+        children = block_data.get('children', [])
+        if children:
+            _restore_tildes_in_blocks(children)
+    return blocks
 
 
 def _normalize_code_fences(md_text):
@@ -520,10 +558,12 @@ def update_notion_blocks_only(page_id, ai_data, raw_content):
         md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', ai_data["content"])
         md_text = _fix_malformed_tables(md_text)
         md_text = _normalize_code_fences(md_text)
+        md_text = _escape_single_tildes(md_text)
         md_text, tables_dict = _extract_and_replace_tables(md_text)
         content_blocks = parse_markdown_to_notion_blocks(md_text)
         content_blocks = _replace_table_placeholders(content_blocks, tables_dict)
         content_blocks = _restore_code_languages(content_blocks)
+        content_blocks = _restore_tildes_in_blocks(content_blocks)
         content_blocks = _strip_invalid_links(content_blocks)
         content_blocks = postprocess_blocks(content_blocks)
     except Exception as e:
