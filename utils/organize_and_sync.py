@@ -260,9 +260,49 @@ def postprocess_blocks(blocks):
             break
     return filtered
 
+def _fix_malformed_tables(md_text):
+    """修復 md2notionpage 的 table parser bug：單行 pipe 格式會觸發 IndexError。
+    確保所有 table 至少有 header + delimiter 兩行，否則 escape pipes。"""
+    lines = md_text.split('\n')
+    result = []
+    table_buf = []
+    table_row_re = re.compile(r'^\|.+\|$')
+
+    def flush_table():
+        if len(table_buf) < 2:
+            # 單行 pipe，escape 避免 md2notionpage 誤判
+            for line in table_buf:
+                result.append(line.replace('|', '\\|'))
+            table_buf.clear()
+            return
+
+        # 檢查第二行是否為分隔線（|---|---|）
+        delimiter_re = re.compile(r'^\|[\s-]+(\|[\s-]+)*\|$')
+        if not delimiter_re.match(table_buf[1].strip()):
+            # 缺少分隔線，根據第一行欄數自動補齊
+            col_count = table_buf[0].count('|') - 1
+            delimiter = '| ' + ' | '.join(['---'] * max(col_count, 1)) + ' |'
+            table_buf.insert(1, delimiter)
+
+        result.extend(table_buf)
+        table_buf.clear()
+
+    for line in lines:
+        if table_row_re.match(line.strip()):
+            table_buf.append(line)
+        else:
+            if table_buf:
+                flush_table()
+            result.append(line)
+    if table_buf:
+        flush_table()
+
+    return '\n'.join(result)
+
 def update_notion(page_id, ai_data, raw_content):
     # 1. 先轉換 blocks（純運算，無 API 呼叫）
     md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', ai_data["content"])
+    md_text = _fix_malformed_tables(md_text)
     content_blocks = parse_markdown_to_notion_blocks(md_text)
     content_blocks = _strip_invalid_links(content_blocks)
     content_blocks = postprocess_blocks(content_blocks)
