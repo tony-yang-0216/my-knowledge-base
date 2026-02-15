@@ -5,7 +5,6 @@ import json
 from datetime import datetime, timezone, timedelta
 from google import genai
 from notion_client import Client
-from notion_client.helpers import collect_paginated_api
 from notion_client.errors import APIResponseError
 from md2notionpage.core import parse_markdown_to_notion_blocks
 from categories import get_categories_prompt
@@ -21,17 +20,29 @@ notion = Client(auth=NOTION_TOKEN)
 
 NOTES_DIR = "notes"
 
+def _paginate(api_call, **kwargs):
+    """手動分頁遍歷 Notion API，回傳所有 results"""
+    results = []
+    has_more = True
+    start_cursor = None
+    while has_more:
+        response = api_call(start_cursor=start_cursor, **kwargs)
+        results.extend(response.get("results", []))
+        has_more = response.get("has_more", False)
+        start_cursor = response.get("next_cursor")
+        if has_more:
+            time.sleep(0.3)
+    return results
+
 def get_draft_pages():
-    return collect_paginated_api(
+    return _paginate(
         notion.databases.query,
         database_id=DATABASE_ID,
         filter={"property": "Status", "status": {"equals": "Draft"}}
     )
 
 def get_page_content(page_id):
-    blocks = collect_paginated_api(
-        notion.blocks.children.list, block_id=page_id
-    )
+    blocks = _paginate(notion.blocks.children.list, block_id=page_id)
     text = ""
     for block in blocks:
         btype = block["type"]
@@ -167,7 +178,7 @@ def update_page_properties(page_id, ai_data):
     )
 
 def delete_all_blocks(page_id):
-    block_ids = [b["id"] for b in collect_paginated_api(
+    block_ids = [b["id"] for b in _paginate(
         notion.blocks.children.list, block_id=page_id
     )]
     for bid in block_ids:
