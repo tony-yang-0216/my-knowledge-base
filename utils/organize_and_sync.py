@@ -195,10 +195,15 @@ def delete_all_blocks(page_id):
     for bid in block_ids:
         notion.blocks.delete(block_id=bid)
 
+def _chunk_text(text, size=2000):
+    """將文字切成不超過 size 的片段（Notion rich_text 上限 2000 字元）"""
+    return [text[i:i+size] for i in range(0, len(text), size)] or [""]
+
 def append_blocks_batched(page_id, blocks):
     for start in range(0, len(blocks), 100):
         batch = blocks[start:start + 100]
         notion.blocks.children.append(block_id=page_id, children=batch)
+
 
 def _strip_invalid_links(blocks):
     """深度掃描所有 blocks，移除非 http/https 的 link"""
@@ -255,15 +260,25 @@ def postprocess_blocks(blocks):
             break
     return filtered
 
-def update_notion(page_id, ai_data):
-    update_page_properties(page_id, ai_data)
-    delete_all_blocks(page_id)
-
+def update_notion(page_id, ai_data, raw_content):
+    # 1. 先轉換 blocks（純運算，無 API 呼叫）
     md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', ai_data["content"])
     content_blocks = parse_markdown_to_notion_blocks(md_text)
     content_blocks = _strip_invalid_links(content_blocks)
     content_blocks = postprocess_blocks(content_blocks)
-    append_blocks_batched(page_id, content_blocks)
+
+    # 2. 刪舊 → 寫新 → 改屬性；失敗則用 raw_content 還原後 re-raise
+    delete_all_blocks(page_id)
+    try:
+        append_blocks_batched(page_id, content_blocks)
+    except Exception:
+        # 還原原始內容為純文字段落，讓頁面保持 raw content + Draft
+        fallback = [{"object": "block", "type": "paragraph",
+                     "paragraph": {"rich_text": [{"text": {"content": chunk}}]}}
+                    for chunk in _chunk_text(raw_content, 2000)]
+        append_blocks_batched(page_id, fallback)
+        raise
+    update_page_properties(page_id, ai_data)
 
 # 執行主流程
 def main():
@@ -299,7 +314,7 @@ def main():
 
         # Notion：用原始 content（不含 Updated Time，Notion 有 property）
         ai_result['content'] = content
-        update_notion(page_id, ai_result)
+        update_notion(page_id, ai_result, raw_content)
         print(f"成功存檔至: {file_path}")
 
         # 等待 60 秒避免 Gemini API rate limit
