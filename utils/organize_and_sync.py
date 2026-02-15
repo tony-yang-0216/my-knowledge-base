@@ -20,13 +20,16 @@ notion = Client(auth=NOTION_TOKEN)
 
 NOTES_DIR = "notes"
 
-def _paginate(api_call, **kwargs):
-    """手動分頁遍歷 Notion API，回傳所有 results"""
+def get_draft_pages():
     results = []
     has_more = True
     start_cursor = None
     while has_more:
-        response = api_call(start_cursor=start_cursor, **kwargs)
+        response = notion.databases.query(
+            database_id=DATABASE_ID,
+            filter={"property": "Status", "status": {"equals": "Draft"}},
+            start_cursor=start_cursor
+        )
         results.extend(response.get("results", []))
         has_more = response.get("has_more", False)
         start_cursor = response.get("next_cursor")
@@ -34,15 +37,24 @@ def _paginate(api_call, **kwargs):
             time.sleep(0.3)
     return results
 
-def get_draft_pages():
-    return _paginate(
-        notion.databases.query,
-        database_id=DATABASE_ID,
-        filter={"property": "Status", "status": {"equals": "Draft"}}
-    )
+def _paginate_blocks(block_id):
+    """分頁取得所有子 blocks"""
+    results = []
+    has_more = True
+    start_cursor = None
+    while has_more:
+        response = notion.blocks.children.list(
+            block_id=block_id, start_cursor=start_cursor
+        )
+        results.extend(response.get("results", []))
+        has_more = response.get("has_more", False)
+        start_cursor = response.get("next_cursor")
+        if has_more:
+            time.sleep(0.3)
+    return results
 
 def get_page_content(page_id):
-    blocks = _paginate(notion.blocks.children.list, block_id=page_id)
+    blocks = _paginate_blocks(page_id)
     text = ""
     for block in blocks:
         btype = block["type"]
@@ -178,9 +190,7 @@ def update_page_properties(page_id, ai_data):
     )
 
 def delete_all_blocks(page_id):
-    block_ids = [b["id"] for b in _paginate(
-        notion.blocks.children.list, block_id=page_id
-    )]
+    block_ids = [b["id"] for b in _paginate_blocks(page_id)]
     for bid in block_ids:
         notion.blocks.delete(block_id=bid)
 
