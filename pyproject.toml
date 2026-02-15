@@ -7,4 +7,5 @@ dependencies = [
     "notion-client==2.2.1",  # 固定版本：v2.7+ 移除 databases.query，改用 data_sources
     "google-genai",
     "md2notionpage",
+    "python-dotenv",
 ]

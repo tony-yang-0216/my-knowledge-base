@@ -1,14 +1,18 @@
 import os
 import re
+import sys
 import time
 import json
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
 from google import genai
 from notion_client import Client
 from md2notionpage.core import parse_markdown_to_notion_blocks
 from categories import get_categories_prompt
 
-# 1. 環境變數設定 (從 GitHub Secrets 讀取)
+# 環境變數設定（本地從 .env 載入，CI 從 GitHub Secrets 讀取）
+load_dotenv()
+
 NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 DATABASE_ID = os.environ.get("NOTION_DATABASE_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -20,23 +24,28 @@ notion = Client(auth=NOTION_TOKEN, notion_version="2022-06-28")
 NOTES_DIR = "notes"
 
 def get_draft_pages():
-    temp_meta = notion.databases.retrieve(database_id=DATABASE_ID)
-    print(f"物件類型: {temp_meta.get('object')}")
+    # temp_meta = notion.databases.retrieve(database_id=DATABASE_ID)
+    # print(f"物件類型: {temp_meta.get('object')}")
     results = []
-    has_more = True
     start_cursor = None
-    while has_more:
+    while True:
         response = notion.databases.query(
             database_id=DATABASE_ID,
+            # 加上 page_size=100 減少 HTTP 請求次數
+            page_size=100, 
             filter={"property": "Status", "status": {"equals": "Draft"}},
             start_cursor=start_cursor
         )
-        results.extend(response.get("results", []))
-        has_more = response.get("has_more", False)
+        batch = response.get("results", [])
+        results.extend(batch)
+
+        # 如果沒有下一頁，直接 break
+        if not response.get("has_more"):
+            break
+            
         start_cursor = response.get("next_cursor")
-        if has_more:
-            time.sleep(0.3)
     return results
+
 
 def _paginate_blocks(block_id):
     """分頁取得所有子 blocks"""
@@ -116,19 +125,26 @@ def organize_with_ai(raw_text):
     你是一位資深技術架構師與知識管理專家。請針對提供的原始對話進行「深度知識內化」，並嚴格遵守以下任務與格式：
 
     ### 任務說明：
-    1.  **簡潔標題 (title)**：提取核心概念，建立一個一眼就能明瞭的簡潔專業技術標題。
+    1.  **簡潔標題 (title)**：提取核心概念，建立一個一眼就能明瞭的簡潔專業技術標題（例如：從「聊聊 JWT」優化為「JWT 身分驗證機制與安全性實踐」）。
     2.  **專業分類 (category)**：根據內容從以下類別中選擇最適合的一個：{categories_text}
-    3.  **層次標籤 (tags)**：提供 2-3 個具備「索引價值」的關鍵標籤。
-    4.  **結構化內容 (content)**：將原始內容重組為專業的 Markdown。**為了確保能成功同步至 Notion，請務必遵守以下「Notion API 相容性規範」：**
+    3.  **層次標籤 (tags)**：提供 2-3 個具備「索引價值」的關鍵標籤。標籤需能幫助在分類下進一步篩選（例如：在 Computer-Science 下使用 [Backend, Security]），避免使用細碎或口語詞彙。
+    4.  **結構化內容 (content)**：將原始內容重組為專業、條理清晰且適合技術讀者閱讀的 Markdown 格式。**為確保能成功同步至 Notion，必須嚴格遵守以下規範：**
 
-        -   **限制清單深度**：清單（Bulleted/Numbered List）最多只能有 **2 層** 巢狀結構。禁止出現第三層（例如：`- - -` 是不允許的）。若邏輯過於複雜，請改用 H3 標題或加粗文字拆分。
-        -   **段落長度限制**：單個段落（Paragraph）字數**嚴格控制在 1800 字元以內**。如果內容極長，請務必在適當處強制換行（雙換行），將其拆分為兩個獨立段落。
-        -   **禁止使用內部連結 (Anchor Links)**：Notion API 不支援 `#section` 格式。請勿建立「目錄跳轉連結」，改用「無連結的加粗清單」作為內容大綱。
-        -   **連結格式規範**：所有 URL 必須是完整的絕對路徑（以 https:// 開頭）。禁止使用相對路徑或純 `#` 標籤。
+        #### A. 內容深度與結構要求：
+        -   **完整性**：不能對原本內容的技術細節進行刪減或簡化，必須完整保留所有重要資訊。
+        -   **內容層次**：內容應包含定義、核心原理、實作步驟、風險控管、最佳實踐等，並搭配示例程式碼。
+        -   **補充說明**：必要時加入說明性文字補充原始內容不足處，確保讀者能完全理解技術細節。
+        -   **視覺化架構**：涉及流程、架構或交互時，必須使用 **Mermaid.js** 語法繪製流程圖 (graph/sequenceDiagram)。如果流程複雜，請拆解為多個步驟分別附圖。
+        -   **Mermaid 語法規則**：每個箭頭語句必須在同一行完成；標籤文字避免使用逗號或括號（用空格或破折號取代）；禁止使用 Unicode 符號或 ASCII 繪圖。
+
+        #### B. Notion API 相容性硬性限制（違者將導致同步失敗）：
+        -   **限制清單深度**：清單（List）最多只能有 **2 層** 巢狀結構。禁止出現第三層（例如：`- - -` 是不允許的）。複雜邏輯請改用 H3 標題拆分。
+        -   **段落長度限制**：單個段落（Paragraph）字數**嚴格控制在 1800 字元以內**。若內容過長，請務必在適當處使用雙換行拆分為獨立段落。
+        -   **連結規範**：所有 URL 必須是完整絕對路徑（以 https:// 開頭）。**禁止使用 `#section` 錨點跳轉連結**，目錄大綱請使用「無連結的加粗清單」。
         -   **表格規範**：Markdown 表格必須包含完整的標題行與分隔線（如 `|---|---|`），確保列數一致。
-        -   **視覺化架構**：使用 **Mermaid.js** 語法繪製流程圖。箭頭語句必須在同一行完成，標籤中避免使用逗號或括號。
-        -   **保留細節**：不能對於原本內容的技術細節進行刪減，使用 H1, H2, H3 建立清晰階層。
-        -   **專業排版**：適當使用粗體、行內程式碼強調重點，並加入範例程式碼確保易讀性。
+        -   **排版禁忌**：禁止使用 Unicode 特殊符號（如 ┌, ─, ┤）。請使用標準 Markdown (H1, H2, H3, 粗體, 行內程式碼)。
+        -   **示例程式碼**：程式碼區塊必須使用三重反引號 ``` 包裹，並指定語言（如 ```python）。禁止使用行內程式碼或其他格式。
+        -   **程式碼區塊語言標籤**：語言名稱不可包含空格。使用 `text` 而非 `plain text`，使用 `csharp` 而非 `c#`。
 
     ### 輸出限制：
     -   必須嚴格輸出合法的 JSON 格式。
@@ -175,18 +191,38 @@ def organize_with_ai(raw_text):
             "content": content
         }
 
+
 def update_page_properties(page_id, ai_data):
-    now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%dT%H:%M:%S+08:00")
-    notion.pages.update(
-        page_id=page_id,
-        properties={
+    """
+    最後的結案步驟：使用 AI 提取的專業標題更新 Notion 頁面屬性，
+    包括狀態(Status)、分類(Category)、標籤(Tags)與更新時間。
+    """
+    try:
+        # 取得台灣時間 (UTC+8) 的 ISO 8601 格式
+        now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+        
+        # 封裝要更新的屬性
+        # 注意：這裡的 ai_data["title"] 是由 AI 根據內容分析後產出的專業標題
+        props = {
             "Name": {"title": [{"text": {"content": ai_data["title"]}}]},
             "Status": {"status": {"name": "Processed"}},
             "Category": {"select": {"name": ai_data["category"]}},
             "Tags": {"multi_select": [{"name": tag} for tag in ai_data["tags"]]},
             "Updated Time": {"date": {"start": now}}
         }
-    )
+
+        # 呼叫 Notion API 更新頁面屬性
+        notion.pages.update(
+            page_id=page_id,
+            properties=props
+        )
+        print(f"✨ [Notion Properties] 屬性與標題更新成功: {page_id}")
+        
+    except Exception as e:
+        print(f"❌ [Notion Properties] 更新失敗: {e}")
+        # 向上拋出錯誤，讓 main() 標記此頁面處理未完成，以便下一小時重新嘗試
+        raise
+
 
 def delete_all_blocks(page_id):
     block_ids = [b["id"] for b in _paginate_blocks(page_id)]
@@ -196,6 +232,7 @@ def delete_all_blocks(page_id):
 def _chunk_text(text, size=2000):
     """將文字切成不超過 size 的片段（Notion rich_text 上限 2000 字元）"""
     return [text[i:i+size] for i in range(0, len(text), size)] or [""]
+
 
 def append_blocks_batched(page_id, blocks):
     for start in range(0, len(blocks), 100):
@@ -231,32 +268,53 @@ def _strip_invalid_links(blocks):
     return blocks
 
 def postprocess_blocks(blocks):
-    """過濾 markdown TOC，插入 Notion 原生 TOC"""
+    """
+    1. 徹底移除 AI 生成的 Markdown 文字目錄
+    2. 在頁面最頂端插入 Notion 原生 TOC 區塊
+    """
     filtered = []
     skip_toc = False
+    
+    # 常用於目錄的關鍵字
+    toc_keywords = ("目錄", "table of contents", "toc", "內容大綱", "outline")
+
     for block in blocks:
         btype = block.get("type", "")
-        # 偵測 TOC 標題（目錄/Table of Contents/TOC）
+        
+        # A. 偵測目錄標題 (H1, H2, 或 H3)
         if btype.startswith("heading_"):
-            text = "".join(t.get("plain_text", "") for t in block[btype].get("rich_text", []))
-            if text.strip().lower() in ("目錄", "table of contents", "toc"):
+            rich_text = block[btype].get("rich_text", [])
+            text = "".join(t.get("plain_text", "") for t in rich_text).strip().lower()
+            
+            # 如果標題包含關鍵字，開啟「跳過模式」
+            if any(k in text for k in toc_keywords):
                 skip_toc = True
+                print(f"🗑️ 偵測到假目錄標題: '{text}'，開始過濾內容...")
                 continue
-        # 跳過 TOC 下方的 anchor-link 清單
-        if skip_toc and btype in ("bulleted_list_item", "numbered_list_item"):
-            continue
-        if skip_toc and btype not in ("bulleted_list_item", "numbered_list_item"):
-            skip_toc = False
+        
+        # B. 跳過模式：連續跳過清單項目 (假目錄的內容)
+        if skip_toc:
+            if btype in ("bulleted_list_item", "numbered_list_item"):
+                continue
+            else:
+                # 遇到非列表區塊，代表假目錄結束，關閉跳過模式
+                skip_toc = False
+        
         filtered.append(block)
 
-    # 在第一個 H1 後插入 Notion 原生 TOC
-    toc = {"object": "block", "type": "table_of_contents",
-           "table_of_contents": {"color": "default"}}
-    for i, b in enumerate(filtered):
-        if b.get("type") == "heading_1":
-            filtered.insert(i + 1, toc)
-            break
+    # C. 插入 Notion 原生 TOC (Table of Contents)
+    # 我們不再找 H1，直接強制插在 index 0 (最頂端)，保證成功
+    notion_toc = {
+        "object": "block", 
+        "type": "table_of_contents",
+        "table_of_contents": {"color": "default"}
+    }
+    
+    filtered.insert(0, notion_toc)
+    print("✅ 已在頁面頂端插入 Notion 原生 TOC")
+    
     return filtered
+
 
 def _fix_malformed_tables(md_text):
     """修復 md2notionpage 的 table parser bug：單行 pipe 格式會觸發 IndexError。
@@ -297,67 +355,288 @@ def _fix_malformed_tables(md_text):
 
     return '\n'.join(result)
 
-def update_notion(page_id, ai_data, raw_content):
-    # 1. 先轉換 blocks（純運算，無 API 呼叫）
-    md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', ai_data["content"])
-    md_text = _fix_malformed_tables(md_text)
-    content_blocks = parse_markdown_to_notion_blocks(md_text)
-    content_blocks = _strip_invalid_links(content_blocks)
-    content_blocks = postprocess_blocks(content_blocks)
 
-    # 2. 刪舊 → 寫新 → 改屬性；失敗則用 raw_content 還原後 re-raise
-    delete_all_blocks(page_id)
+def _extract_and_replace_tables(md_text):
+    """從 markdown 中提取表格，替換為佔位符，避免 md2notionpage 將其轉為 LaTeX。
+    回傳 (modified_md, tables_dict)，tables_dict = {N: [table_lines]}。
+    """
+    lines = md_text.split('\n')
+    result = []
+    table_buf = []
+    tables_dict = {}
+    counter = 0
+    table_row_re = re.compile(r'^\s*\|.+\|')
+
+    def flush_table():
+        nonlocal counter
+        if not table_buf:
+            return
+        # 至少需要 header + delimiter 才算有效表格
+        delimiter_re = re.compile(r'^\s*\|[\s:]*-+[\s:]*(\|[\s:]*-+[\s:]*)*\|')
+        if len(table_buf) >= 2 and delimiter_re.match(table_buf[1]):
+            tables_dict[counter] = list(table_buf)
+            result.append(f'TABLE_PLACEHOLDER_{counter}')
+            counter += 1
+        else:
+            # 不是有效表格，原樣保留
+            result.extend(table_buf)
+        table_buf.clear()
+
+    for line in lines:
+        if table_row_re.match(line):
+            table_buf.append(line)
+        else:
+            if table_buf:
+                flush_table()
+            result.append(line)
+    if table_buf:
+        flush_table()
+
+    return '\n'.join(result), tables_dict
+
+
+def _parse_table_cells(row_line):
+    """解析一行表格，回傳 cell 內容清單。"""
+    # 去掉首尾的 |
+    stripped = row_line.strip()
+    if stripped.startswith('|'):
+        stripped = stripped[1:]
+    if stripped.endswith('|'):
+        stripped = stripped[:-1]
+    return [cell.strip() for cell in stripped.split('|')]
+
+
+def _markdown_table_to_notion_blocks(table_lines):
+    """將 markdown 表格行轉為 Notion 原生 table block。"""
+    if len(table_lines) < 2:
+        return []
+
+    header_cells = _parse_table_cells(table_lines[0])
+    num_columns = len(header_cells)
+
+    # 建立所有 row（header + data rows，跳過 delimiter row）
+    rows = []
+    for i, line in enumerate(table_lines):
+        if i == 1:
+            continue  # 跳過分隔線
+        cells = _parse_table_cells(line)
+        # 確保 cell 數量與 header 一致
+        while len(cells) < num_columns:
+            cells.append('')
+        cells = cells[:num_columns]
+
+        row = {
+            "type": "table_row",
+            "table_row": {
+                "cells": [
+                    [{"type": "text", "text": {"content": cell}}]
+                    for cell in cells
+                ]
+            }
+        }
+        rows.append(row)
+
+    table_block = {
+        "object": "block",
+        "type": "table",
+        "table": {
+            "table_width": num_columns,
+            "has_column_header": True,
+            "has_row_header": False,
+            "children": rows
+        }
+    }
+    return table_block
+
+
+def _replace_table_placeholders(blocks, tables_dict):
+    """將 parse_markdown_to_notion_blocks 產生的佔位符段落替換為 Notion table block。"""
+    if not tables_dict:
+        return blocks
+
+    placeholder_re = re.compile(r'^TABLE_PLACEHOLDER_(\d+)$')
+    result = []
+    for block in blocks:
+        replaced = False
+        if block.get('type') == 'paragraph':
+            rich_text = block.get('paragraph', {}).get('rich_text', [])
+            if len(rich_text) == 1:
+                text_content = rich_text[0].get('text', {}).get('content', '').strip()
+                m = placeholder_re.match(text_content)
+                if m:
+                    idx = int(m.group(1))
+                    if idx in tables_dict:
+                        table_block = _markdown_table_to_notion_blocks(tables_dict[idx])
+                        if table_block:
+                            result.append(table_block)
+                            replaced = True
+        if not replaced:
+            result.append(block)
+    return result
+
+
+def _normalize_code_fences(md_text):
+    """將 code fence 語言名稱中的空格替換為底線，讓 md2notionpage 的 \\w+ regex 能正確匹配。"""
+    def _replace_lang(m):
+        lang = m.group(1).strip()
+        normalized = lang.replace(' ', '_')
+        return f'```{normalized}\n'
+    return re.sub(r'```([ \w]+)\n', _replace_lang, md_text)
+
+
+def _restore_code_languages(blocks):
+    """還原 code block 語言名稱中的底線為空格（例如 plain_text → plain text）。"""
+    lang_restore_map = {
+        'plain_text': 'plain text',
+    }
+    for block in blocks:
+        if block.get('type') == 'code':
+            lang = block['code'].get('language', '')
+            if lang in lang_restore_map:
+                block['code']['language'] = lang_restore_map[lang]
+        # 遞迴處理子 blocks
+        children = block.get(block.get('type', ''), {})
+        if isinstance(children, dict):
+            child_blocks = children.get('children', [])
+            if child_blocks:
+                _restore_code_languages(child_blocks)
+    return blocks
+
+
+def chunk_raw_content(text, chunk_size=1900):
+    """單純將純文字切成片段，用於還原機制"""
+    if not text:
+        return ["(無內容)"]
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+
+def update_notion_blocks_only(page_id, ai_data, raw_content):
+    """
+    僅更新 Notion 頁面的內容區塊 (Blocks)。
+    如果失敗，會嘗試還原原始內容為純文字。
+    """
+    # 1. 預處理：失敗直接 raise，不執行 API 刪除 (避免空刪)
     try:
-        append_blocks_batched(page_id, content_blocks)
-    except Exception:
-        # 還原原始內容為純文字段落，讓頁面保持 raw content + Draft
-        fallback = [{"object": "block", "type": "paragraph",
-                     "paragraph": {"rich_text": [{"text": {"content": chunk}}]}}
-                    for chunk in _chunk_text(raw_content, 2000)]
-        append_blocks_batched(page_id, fallback)
+        md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', ai_data["content"])
+        md_text = _fix_malformed_tables(md_text)
+        md_text = _normalize_code_fences(md_text)
+        md_text, tables_dict = _extract_and_replace_tables(md_text)
+        content_blocks = parse_markdown_to_notion_blocks(md_text)
+        content_blocks = _replace_table_placeholders(content_blocks, tables_dict)
+        content_blocks = _restore_code_languages(content_blocks)
+        content_blocks = _strip_invalid_links(content_blocks)
+        content_blocks = postprocess_blocks(content_blocks)
+    except Exception as e:
+        print(f"❌ [預處理] 失敗: {e}")
         raise
-    update_page_properties(page_id, ai_data)
 
-# 執行主流程
-def main():
-    pages = get_draft_pages()
+    # 2. API 操作：執行 刪除 -> 寫入
+    try:
+        delete_all_blocks(page_id)
+        append_blocks_batched(page_id, content_blocks)
+        print(f"✅ [Notion Blocks] 內容更新成功: {page_id}")
+    except Exception as e:
+        print(f"⚠️ [Notion API] 更新失敗，啟動還原機制。錯誤: {e}")
+        try:
+            text_chunks = chunk_raw_content(raw_content)
+            fallback = [
+                {
+                    "object": "block", 
+                    "type": "paragraph",
+                    "paragraph": {"rich_text": [{"type": "text", "text": {"content": chunk}}]}
+                } for chunk in text_chunks
+            ]
+            append_blocks_batched(page_id, fallback)
+            print("🔄 [Recovery] 原始內容已成功還原。")
+        except Exception as recovery_error:
+            print(f"🚨 [Fatal] 連還原也失敗了！頁面可能為空。錯誤: {recovery_error}")
+        
+        # 務必再次拋出錯誤，讓 main() 知曉並跳過後續 GitHub 存檔
+        raise
 
-    for page in pages:
-        page_id = page["id"]
-        raw_content = get_page_content(page_id)
-        if not raw_content.strip():
-            continue
 
-        # AI 處理
-        ai_result = organize_with_ai(raw_content)
-
-        # 建立資料夾並存檔至 GitHub
+def save_to_github(ai_result, content):
+    """
+    建立分類資料夾並將 AI 處理後的 Markdown 內容存檔至本地目錄（後續由 GitHub Action Commit）。
+    """
+    try:
+        # 1. 確保分類資料夾存在
         category_dir = f"{NOTES_DIR}/{ai_result['category']}"
         os.makedirs(category_dir, exist_ok=True)
 
-        safe_title = ai_result["title"].replace("/", "-")
+        # 2. 處理安全標題（移除檔案系統不允許的字元）
+        safe_title = ai_result["title"].replace("/", "-").replace("\\", "-")
         file_path = f"{category_dir}/{safe_title}.md"
+        
+        # 3. 取得當前時間 (台灣時間)
         now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
-        # 將 JSON 轉義字元轉成真正的字元
-        content = ai_result['content'].replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\').replace('\\t', '\t')
 
-        # Markdown 檔案：在 H1 後插入 Updated Time
+        # 4. 在 H1 標題後插入 Updated Time 註記
         md_content = content
         content_lines = md_content.split('\n')
         if content_lines and content_lines[0].startswith('# '):
+            # 在第一行 (# Title) 之後插入更新時間
             content_lines.insert(1, f'\n> Updated: {now}\n')
             md_content = '\n'.join(content_lines)
+
+        # 5. 寫入檔案
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(md_content)
+            
+        print(f"💾 [GitHub Sync] 檔案已寫入: {file_path}")
+        return file_path
 
-        # Notion：用原始 content（不含 Updated Time，Notion 有 property）
-        ai_result['content'] = content
-        update_notion(page_id, ai_result, raw_content)
-        print(f"成功存檔至: {file_path}")
+    except Exception as e:
+        print(f"❌ [GitHub Sync] 檔案寫入失敗: {e}")
+        raise # 向上拋出錯誤，讓 main() 知曉並跳過後續的 Status 更新
 
-        # 等待 60 秒避免 Gemini API rate limit
-        print("等待 60 秒後處理下一頁...")
+
+def main():
+    pages = get_draft_pages()
+    print(f"找到 {len(pages)} 頁待處理...")
+    
+    # 紀錄是否有任何一頁失敗，用來決定最後 Workflow 的狀態
+    has_any_error = False
+
+    for page in pages:
+        page_id = page["id"]
+        try:
+            raw_content = get_page_content(page_id)
+            if not raw_content.strip():
+                continue
+
+            print(f"正在處理頁面: {page_id}，內容長度: {len(raw_content)} 字元")
+
+            # A. AI 處理
+            ai_result = organize_with_ai(raw_content)
+            content = ai_result['content'].replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\').replace('\\t', '\t')
+            ai_result['content'] = content
+
+            # B. 更新 Notion 內容 (此時不改 Status，失敗會自動觸發 fallback)
+            # 注意：update_notion 內部不應包含修改 Status 的邏輯
+            update_notion_blocks_only(page_id, ai_result, raw_content)
+
+            # C. 存檔至 GitHub
+            save_to_github(ai_result, content)
+
+            # D. 最後一步：所有都成功了，才修改 Notion 屬性 (Status: Done)
+            # 這樣如果上面 B 或 C 失敗，這篇在下一小時會被重新處理
+            update_page_properties(page_id, ai_result)
+            
+            print(f"✅ 頁面 {page_id} 處理完成。")
+
+        except Exception as e:
+            print(f"❌ 處理頁面 {page_id} 時發生錯誤: {e}")
+            has_any_error = True  # 標記發生過錯誤
+            continue # 跳過這篇，處理下一篇
+
+        # 節流處理
         time.sleep(60)
+
+    # 如果有任何一頁失敗，強制結束程式並拋出錯誤，讓 GitHub Actions 變紅燈
+    if has_any_error:
+        print("🚨 部分頁面處理失敗，請檢查 Log。")
+        sys.exit(1) # 讓 GitHub Action 報錯
 
 
 if __name__ == "__main__":
