@@ -16,17 +16,19 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # 初始化
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-notion = Client(auth=NOTION_TOKEN)
+notion = Client(auth=NOTION_TOKEN, notion_version="2022-06-28")
 
 NOTES_DIR = "notes"
 
 def get_draft_pages():
+    temp_meta = notion.databases.retrieve(database_id=DATABASE_ID)
+    print(f"物件類型: {temp_meta.get('object')}")
     results = []
     has_more = True
     start_cursor = None
     while has_more:
-        response = notion.data_sources.query(
-            data_source_id=DATABASE_ID,
+        response = notion.databases.query(
+            database_id=DATABASE_ID,
             filter={"property": "Status", "status": {"equals": "Draft"}},
             start_cursor=start_cursor
         )
