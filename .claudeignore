@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Notes content (knowledge base articles, not source code)
+notes/
+
+# Build artifacts & caches
+.vitepress/cache/
+.vitepress/dist/
+__pycache__/
+
+# Lock files (large, no useful context)
+package-lock.json
+
+# Git internals
+.git/
+
+# Environment & secrets
+utils/.env
+
+# Editor / IDE
+.vscode/
