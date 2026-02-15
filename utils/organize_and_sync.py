@@ -5,7 +5,6 @@ import json
 from datetime import datetime, timezone, timedelta
 from google import genai
 from notion_client import Client
-from notion_client.errors import APIResponseError
 from md2notionpage.core import parse_markdown_to_notion_blocks
 from categories import get_categories_prompt
 
@@ -240,56 +239,44 @@ def update_notion(page_id, ai_data):
 
 # 執行主流程
 def main():
-    try:
-        pages = get_draft_pages()
-    except APIResponseError as e:
-        print(f"Failed to query database: {e}")
-        return
+    pages = get_draft_pages()
 
     for page in pages:
         page_id = page["id"]
-        try:
-            raw_content = get_page_content(page_id)
-            if not raw_content.strip():
-                continue
-
-            # AI 處理
-            ai_result = organize_with_ai(raw_content)
-
-            # 建立資料夾並存檔至 GitHub
-            category_dir = f"{NOTES_DIR}/{ai_result['category']}"
-            os.makedirs(category_dir, exist_ok=True)
-
-            safe_title = ai_result["title"].replace("/", "-")
-            file_path = f"{category_dir}/{safe_title}.md"
-            now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
-            # 將 JSON 轉義字元轉成真正的字元
-            content = ai_result['content'].replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\').replace('\\t', '\t')
-
-            # Markdown 檔案：在 H1 後插入 Updated Time
-            md_content = content
-            content_lines = md_content.split('\n')
-            if content_lines and content_lines[0].startswith('# '):
-                content_lines.insert(1, f'\n> Updated: {now}\n')
-                md_content = '\n'.join(content_lines)
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(md_content)
-
-            # Notion：用原始 content（不含 Updated Time，Notion 有 property）
-            ai_result['content'] = content
-            update_notion(page_id, ai_result)
-            print(f"成功存檔至: {file_path}")
-
-            # 等待 60 秒避免 Gemini API rate limit
-            print("等待 60 秒後處理下一頁...")
-            time.sleep(60)
-
-        except APIResponseError as e:
-            print(f"Notion API error for page {page_id}: {e}")
+        raw_content = get_page_content(page_id)
+        if not raw_content.strip():
             continue
-        except Exception as e:
-            print(f"Error processing page {page_id}: {e}")
-            continue
+
+        # AI 處理
+        ai_result = organize_with_ai(raw_content)
+
+        # 建立資料夾並存檔至 GitHub
+        category_dir = f"{NOTES_DIR}/{ai_result['category']}"
+        os.makedirs(category_dir, exist_ok=True)
+
+        safe_title = ai_result["title"].replace("/", "-")
+        file_path = f"{category_dir}/{safe_title}.md"
+        now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
+        # 將 JSON 轉義字元轉成真正的字元
+        content = ai_result['content'].replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\').replace('\\t', '\t')
+
+        # Markdown 檔案：在 H1 後插入 Updated Time
+        md_content = content
+        content_lines = md_content.split('\n')
+        if content_lines and content_lines[0].startswith('# '):
+            content_lines.insert(1, f'\n> Updated: {now}\n')
+            md_content = '\n'.join(content_lines)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(md_content)
+
+        # Notion：用原始 content（不含 Updated Time，Notion 有 property）
+        ai_result['content'] = content
+        update_notion(page_id, ai_result)
+        print(f"成功存檔至: {file_path}")
+
+        # 等待 60 秒避免 Gemini API rate limit
+        print("等待 60 秒後處理下一頁...")
+        time.sleep(60)
 
 
 if __name__ == "__main__":
