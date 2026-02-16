@@ -20,6 +20,7 @@ NOTION_API_VERSION = "2022-06-28"
 
 # File paths
 NOTES_DIR = "notes"
+DRAFTS_DIR = "drafts"
 
 # Timezone
 TW_TIMEZONE = timezone(timedelta(hours=8))
