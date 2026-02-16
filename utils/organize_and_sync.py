@@ -10,6 +10,7 @@ from notion_client import Client
 import mistune
 from categories import get_categories_prompt
 from prompts import build_organize_prompt
+from notion_languages import normalize_notion_language
 
 # 環境變數設定（本地從 .env 載入，CI 從 GitHub Secrets 讀取）
 load_dotenv()
@@ -23,6 +24,7 @@ gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 notion = Client(auth=NOTION_TOKEN, notion_version="2022-06-28") if NOTION_TOKEN else None
 
 NOTES_DIR = "notes"
+
 
 def get_draft_pages():
     # temp_meta = notion.databases.retrieve(database_id=DATABASE_ID)
@@ -313,6 +315,7 @@ def _convert_list(list_token):
             elif child['type'] == 'block_code':
                 code = child.get('raw', '')[:2000]
                 lang = child.get('attrs', {}).get('info', '') or 'plain text'
+                lang = normalize_notion_language(lang)
                 nested_blocks.append({
                     "object": "block", "type": "code",
                     "code": {
@@ -430,6 +433,7 @@ def markdown_to_notion_blocks(markdown_text, for_notion=False):
         elif ttype == 'block_code':
             code = token.get('raw', '')[:2000]
             lang = token.get('attrs', {}).get('info', '') or 'plain text'
+            lang = normalize_notion_language(lang)
             blocks.append({
                 "object": "block", "type": "code",
                 "code": {
