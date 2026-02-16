@@ -1,0 +1,37 @@
+name: Publish Drafts
+
+on:
+  schedule:
+    - cron: '30 * * * *'   # 每小時第 30 分鐘，錯開 sync.yml
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install .
+      - name: Publish drafts to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: python utils/draft_publisher.py
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'Knowledge-Bot'
+          git config --global user.email 'actions@github.com'
+          git add notes/
+          git commit -m "📝 Draft Publisher: Publish drafts to Notion" || exit 0
+          git push
+
+  deploy:
+    needs: publish
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      pages: write
+      id-token: write
