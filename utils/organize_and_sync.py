@@ -402,6 +402,16 @@ def _sanitize_mermaid(code):
     return code
 
 
+def _sanitize_mermaid_in_markdown(content):
+    """對 Markdown 原文中所有 ```mermaid 區塊套用 _sanitize_mermaid，確保 GitHub 也能正確渲染。"""
+    return re.sub(
+        r'(```mermaid\s*\n)(.*?)(```)',
+        lambda m: m.group(1) + _sanitize_mermaid(m.group(2)) + m.group(3),
+        content,
+        flags=re.DOTALL,
+    )
+
+
 def markdown_to_notion_blocks(markdown_text, for_notion=False):
     """使用 mistune AST parser 將 Markdown 轉成 Notion blocks"""
     # 清理 HTML anchor tags
@@ -557,7 +567,10 @@ def save_to_github(ai_result, content):
             content_lines.insert(1, f'\n> Updated: {now}\n')
             md_content = '\n'.join(content_lines)
 
-        # 5. 寫入檔案
+        # 5. Sanitize Mermaid 區塊（確保 GitHub 能正確渲染）
+        md_content = _sanitize_mermaid_in_markdown(md_content)
+
+        # 6. 寫入檔案
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(md_content)
             

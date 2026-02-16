@@ -18,7 +18,7 @@ ORGANIZE_PROMPT = """
     -   **禁止 ASCII 繪圖**：禁止使用 ASCII box-drawing 字元（| ┌ ─ ┐ │ └ ┘ ├ ┤ ╔ ═ ╗ ║ ╚ ╝）繪製任何圖表、框架圖或流程圖。
     -   **流程與架構圖**：涉及流程、架構、層級關係或交互時，必須使用 **Mermaid.js** 語法（graph/sequenceDiagram/flowchart）。如果流程複雜，請拆解為多個步驟分別附圖。
     -   **簡單列舉與對比**：使用 Markdown table 或 bullet list，禁止用 ASCII 框線模擬表格。
-    -   **Mermaid 語法規則**：每個箭頭語句必須在同一行完成；標籤文字避免使用逗號或括號（用空格或破折號取代）；禁止使用 Unicode 符號。
+    -   **Mermaid 語法規則**：每個箭頭語句必須在同一行完成，禁止換行；標籤文字避免使用逗號或括號（用空格或破折號取代）；禁止使用 Unicode 符號；生成後請自行驗證語法正確性。
     -   **程式碼範例**：程式碼區塊必須使用三重反引號包裹，並指定正確的語言標籤（如 python, javascript）。禁止使用 `plain text` 作為語言標籤，改用 `text`。
 
     #### C. Notion API 相容性硬性限制（違者將導致同步失敗）：
