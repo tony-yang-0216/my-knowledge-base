@@ -18,9 +18,9 @@ NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 DATABASE_ID = os.environ.get("NOTION_DATABASE_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 初始化
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-notion = Client(auth=NOTION_TOKEN, notion_version="2022-06-28")
+# 初始化（條件式，讓只需要轉換函式的工具不必設定 API key）
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+notion = Client(auth=NOTION_TOKEN, notion_version="2022-06-28") if NOTION_TOKEN else None
 
 NOTES_DIR = "notes"
 

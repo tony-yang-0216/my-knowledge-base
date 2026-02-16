@@ -4,6 +4,10 @@ import argparse
 import os
 import sys
 
+# 載入 utils/.env（確保從專案根目錄執行時也能讀取環境變數）
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'utils', '.env'))
+
 # 加入 utils/ 目錄以匯入 organize_and_sync
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 

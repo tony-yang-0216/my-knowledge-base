@@ -1,42 +1,19 @@
 #!/usr/bin/env python3
-"""測試 Markdown 檔案經 md2notionpage 轉換後的 Notion blocks 結構。"""
+"""測試 Markdown 檔案經 mistune AST 轉換後的 Notion blocks 結構。"""
 import argparse
 import json
 import os
-import re
 import sys
 
 # 加入 utils/ 目錄以匯入 organize_and_sync
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 
-from organize_and_sync import (
-    _fix_malformed_tables,
-    _normalize_code_fences,
-    _escape_single_tildes,
-    _extract_and_replace_tables,
-    _replace_table_placeholders,
-    _restore_code_languages,
-    _restore_tildes_in_blocks,
-    _strip_invalid_links,
-    postprocess_blocks,
-)
-from md2notionpage.core import parse_markdown_to_notion_blocks
+from organize_and_sync import markdown_to_notion_blocks
 
 
 def convert_md_to_blocks(md_text):
-    """執行完整預處理鏈，回傳 Notion blocks。"""
-    md_text = re.sub(r'<a\s+id="[^"]*">\s*</a>', '', md_text)
-    md_text = _fix_malformed_tables(md_text)
-    md_text = _normalize_code_fences(md_text)
-    md_text = _escape_single_tildes(md_text)
-    md_text, tables_dict = _extract_and_replace_tables(md_text)
-    blocks = parse_markdown_to_notion_blocks(md_text)
-    blocks = _replace_table_placeholders(blocks, tables_dict)
-    blocks = _restore_code_languages(blocks)
-    blocks = _restore_tildes_in_blocks(blocks)
-    blocks = _strip_invalid_links(blocks)
-    blocks = postprocess_blocks(blocks)
-    return blocks
+    """執行 Markdown → Notion blocks 轉換（使用 mistune AST parser）。"""
+    return markdown_to_notion_blocks(md_text)
 
 
 def print_summary(blocks, preview_count=5):
@@ -124,7 +101,7 @@ def filter_blocks(blocks, block_type):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="測試 Markdown 轉 Notion blocks 的完整預處理流程"
+        description="測試 Markdown 轉 Notion blocks（mistune AST parser）"
     )
     parser.add_argument("file", nargs="?", default="-",
                         help="Markdown 檔案路徑（省略則從 stdin 讀取）")

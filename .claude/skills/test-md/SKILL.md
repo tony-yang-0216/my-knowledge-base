@@ -1,12 +1,12 @@
 ---
 name: test-md
-description: 測試 Markdown 檔案經 md2notionpage 轉換後的 Notion blocks 結構
+description: 測試 Markdown 檔案經 mistune AST 轉換後的 Notion blocks 結構
 allowed-tools: Bash(venv/bin/python tools/test_md_convert.py*)
 ---
 
 # 測試 Markdown 轉 Notion Blocks
 
-執行 `python tools/test_md_convert.py` 測試 Markdown 檔案經過完整預處理鏈後產生的 Notion blocks 結構，不會實際上傳到 Notion。
+執行 `python tools/test_md_convert.py` 測試 Markdown 檔案經 mistune AST parser 轉換後產生的 Notion blocks 結構，不會實際上傳到 Notion。
 
 ## 使用方式
 
