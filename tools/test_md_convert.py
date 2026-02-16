@@ -5,10 +5,10 @@ import json
 import os
 import sys
 
-# 加入 utils/ 目錄以匯入 organize_and_sync
+# 加入 utils/ 目錄以匯入模組
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 
-from organize_and_sync import markdown_to_notion_blocks
+from md_to_notion import markdown_to_notion_blocks
 
 
 def strip_frontmatter(text):

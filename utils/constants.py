@@ -12,9 +12,6 @@ FALLBACK_CHUNK_SIZE = 1900
 # Throttling
 PAGE_DELAY_SECONDS = 5
 
-# Gemini
-GEMINI_MODEL = "gemini-2.5-flash"
-
 # Notion
 NOTION_API_VERSION = "2022-06-28"
 

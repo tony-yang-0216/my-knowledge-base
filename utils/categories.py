@@ -7,11 +7,3 @@ CATEGORIES = {
     "40-News": "時事新聞與產業趨勢，包含科技動態、產業分析、重大事件摘要等",
     "99-Inbox": "無法明確歸類的內容，待後續整理分類",
 }
-
-
-def get_categories_prompt():
-    """產生供 AI prompt 使用的類別說明文字"""
-    lines = []
-    for name, description in CATEGORIES.items():
-        lines.append(f"- **{name}**：{description}")
-    return "\n".join(lines)

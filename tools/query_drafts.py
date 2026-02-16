@@ -8,10 +8,10 @@ import sys
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'utils', '.env'))
 
-# 加入 utils/ 目錄以匯入 organize_and_sync
+# 加入 utils/ 目錄以匯入模組
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 
-from organize_and_sync import get_draft_pages, get_page_content
+from notion_reader import get_draft_pages, get_page_content
 
 
 def list_drafts():

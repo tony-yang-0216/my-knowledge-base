@@ -8,9 +8,8 @@ import os
 from dotenv import load_dotenv
 from constants import NOTION_API_VERSION
 
-# Module-level singletons (populated on first call)
+# Module-level singleton (populated on first call)
 _notion_client = None
-_gemini_client = None
 
 
 def _ensure_env():
@@ -27,14 +26,3 @@ def get_notion_client():
         token = os.environ.get("NOTION_TOKEN")
         _notion_client = Client(auth=token, notion_version=NOTION_API_VERSION)
     return _notion_client
-
-
-def get_gemini_client():
-    """Return a lazily-initialized Gemini client singleton."""
-    global _gemini_client
-    if _gemini_client is None:
-        _ensure_env()
-        from google import genai
-        api_key = os.environ.get("GEMINI_API_KEY")
-        _gemini_client = genai.Client(api_key=api_key)
-    return _gemini_client

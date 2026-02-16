@@ -1,11 +1,10 @@
 [project]
 name = "my-knowledge-base"
 version = "0.1.0"
-description = "Notion AI Organizer & Sync"
+description = "Draft Publisher: Publish markdown drafts to Notion"
 requires-python = ">=3.12"
 dependencies = [
     "notion-client==2.2.1",  # 固定版本：v2.7+ 移除 databases.query，改用 data_sources
-    "google-genai",
     "mistune",
     "python-dotenv",
     "pyyaml",
