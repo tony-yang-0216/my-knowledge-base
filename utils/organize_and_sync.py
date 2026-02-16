@@ -608,8 +608,8 @@ def main():
             has_any_error = True  # 標記發生過錯誤
             continue # 跳過這篇，處理下一篇
 
-        # 節流處理
-        time.sleep(60)
+        # 節流處理（每頁處理本身已包含多次 API 呼叫，自然有間隔）
+        time.sleep(5)
 
     # 如果有任何一頁失敗，強制結束程式並拋出錯誤，讓 GitHub Actions 變紅燈
     if has_any_error:
