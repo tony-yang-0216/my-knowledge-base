@@ -316,6 +316,8 @@ def _convert_list(list_token):
                 code = child.get('raw', '')[:2000]
                 lang = child.get('attrs', {}).get('info', '') or 'plain text'
                 lang = normalize_notion_language(lang)
+                if lang == 'mermaid':
+                    code = _sanitize_mermaid(code)
                 nested_blocks.append({
                     "object": "block", "type": "code",
                     "code": {
@@ -383,6 +385,23 @@ def _convert_table(table_token):
     }
 
 
+def _sanitize_mermaid(code):
+    """Quote Mermaid node/edge labels that contain parentheses to prevent parse errors."""
+    # Quote [...] labels containing ( or ) that aren't already quoted
+    code = re.sub(
+        r'\[([^"\[\]]*\([^"\[\]]*)\]',
+        lambda m: f'["{m.group(1)}"]',
+        code
+    )
+    # Quote |...| edge labels containing ( or ) that aren't already quoted
+    code = re.sub(
+        r'\|([^"|]*\([^"|]*)\|',
+        lambda m: f'|"{m.group(1)}"|',
+        code
+    )
+    return code
+
+
 def markdown_to_notion_blocks(markdown_text, for_notion=False):
     """使用 mistune AST parser 將 Markdown 轉成 Notion blocks"""
     # 清理 HTML anchor tags
@@ -434,6 +453,8 @@ def markdown_to_notion_blocks(markdown_text, for_notion=False):
             code = token.get('raw', '')[:2000]
             lang = token.get('attrs', {}).get('info', '') or 'plain text'
             lang = normalize_notion_language(lang)
+            if lang == 'mermaid':
+                code = _sanitize_mermaid(code)
             blocks.append({
                 "object": "block", "type": "code",
                 "code": {
