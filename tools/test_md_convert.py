@@ -11,9 +11,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from organize_and_sync import markdown_to_notion_blocks
 
 
-def convert_md_to_blocks(md_text):
+def strip_frontmatter(text):
+    """如果內容以 YAML frontmatter 開頭（---），則剝離並回傳 body。"""
+    if not text.startswith("---"):
+        return text
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return text
+    return parts[2].lstrip("\n")
+
+
+def convert_md_to_blocks(md_text, for_notion=True):
     """執行 Markdown → Notion blocks 轉換（使用 mistune AST parser）。"""
-    return markdown_to_notion_blocks(md_text)
+    return markdown_to_notion_blocks(md_text, for_notion=for_notion)
 
 
 def print_summary(blocks, preview_count=5):
@@ -109,6 +119,8 @@ def main():
                         help="輸出完整 Notion block JSON")
     parser.add_argument("--filter", metavar="TYPE",
                         help="只顯示特定類型的 blocks（例如 code, table, heading_2）")
+    parser.add_argument("--raw", action="store_true",
+                        help="不剝離 YAML frontmatter，不啟用 for_notion 過濾（除錯用）")
     args = parser.parse_args()
 
     # 讀取 Markdown 內容
@@ -120,10 +132,17 @@ def main():
         with open(args.file, "r", encoding="utf-8") as f:
             md_text = f.read()
 
-    print(f"讀取 Markdown: {len(md_text)} 字元\n")
+    print(f"讀取 Markdown: {len(md_text)} 字元")
+
+    # 預設行為：模擬實際寫入 Notion 的流程（剝離 frontmatter + for_notion=True）
+    if not args.raw:
+        md_text = strip_frontmatter(md_text)
+        print(f"剝離 frontmatter 後: {len(md_text)} 字元\n")
+    else:
+        print("(--raw 模式：不剝離 frontmatter，不啟用 for_notion 過濾)\n")
 
     # 轉換
-    blocks = convert_md_to_blocks(md_text)
+    blocks = convert_md_to_blocks(md_text, for_notion=not args.raw)
 
     # 篩選
     if args.filter:
