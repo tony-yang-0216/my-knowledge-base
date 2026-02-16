@@ -306,10 +306,20 @@ def _convert_list(list_token):
         inline_children = _get_inline_children(item.get('children', []))
         nested_blocks = []
 
-        # 找巢狀 list（子清單）
+        # 找巢狀 list（子清單）與 code blocks
         for child in item.get('children', []):
             if child['type'] == 'list':
                 nested_blocks.extend(_convert_list(child))
+            elif child['type'] == 'block_code':
+                code = child.get('raw', '')[:2000]
+                lang = child.get('attrs', {}).get('info', '') or 'plain text'
+                nested_blocks.append({
+                    "object": "block", "type": "code",
+                    "code": {
+                        "rich_text": [{"text": {"content": code}}],
+                        "language": lang
+                    }
+                })
 
         block = _make_block(block_type, inline_children)
         if nested_blocks:
