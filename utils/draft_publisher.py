@@ -5,7 +5,7 @@ import os
 import shutil
 import sys
 import time
-
+from dotenv import load_dotenv
 import yaml
 
 from categories import CATEGORIES
@@ -22,6 +22,11 @@ from notion_writer import create_page_in_database, update_page_status
 
 FALLBACK_CATEGORY = "99-Inbox"
 STATUS_UPDATE_MAX_RETRIES = 2
+
+
+def _ensure_env():
+    """Load .env once (idempotent)."""
+    load_dotenv()
 
 
 # ---------------------------------------------------------------------------
@@ -214,4 +219,5 @@ def main():
 
 
 if __name__ == "__main__":
+    _ensure_env()
     main()
