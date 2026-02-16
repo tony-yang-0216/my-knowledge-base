@@ -10,3 +10,6 @@ dependencies = [
     "python-dotenv",
     "pyyaml",
 ]
+
+[tool.setuptools]
+packages = []
