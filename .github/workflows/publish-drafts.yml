@@ -2,7 +2,7 @@ name: Publish Drafts
 
 on:
   schedule:
-    - cron: '30 * * * *'   # 每小時第 30 分鐘，錯開 sync.yml
+    - cron: '0 */4 * * *'   # 每4小時跑一次
   workflow_dispatch:
 
 jobs:
