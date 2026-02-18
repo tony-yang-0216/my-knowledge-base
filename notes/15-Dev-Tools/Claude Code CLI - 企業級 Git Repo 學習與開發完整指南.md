@@ -492,11 +492,11 @@ echo "Run /onboard to start exploring."
 
 ```mermaid
 flowchart TD
-    A[clone repo] --> B[/init-repo 生成 CLAUDE.md + docs]
-    B --> C[/onboard 第一次探索]
+    A[clone repo] --> B["/init-repo" 生成 CLAUDE.md + docs]
+    B --> C["/onboard" 第一次探索]
     C --> D[Claude 提問 - 你回答]
     D --> E[生成 CODEBASE.md + ONBOARDING.md]
-    E --> F{日後再次 /onboard}
+    E --> F{"日後再次 /onboard"}
     F --> G[讀取既有 CODEBASE.md]
     G --> H[驗證是否過時 - 增量更新]
     H --> I[知識持續累積]
@@ -739,12 +739,12 @@ git commit -m "feat(export): add user data export endpoint" -m "- Add ExportServ
 flowchart LR
     A[開始任務 A] --> B[完成任務 A]
     B --> C{下一步?}
-    C -->|切換任務| D[/clear]
+    C -->|切換任務| D["/clear"]
     D --> E[開始任務 B]
-    C -->|context 太長| F[/compact]
+    C -->|context 太長| F["/compact"]
     F --> G[繼續任務 A]
     C -->|繼續相同任務| G
-    C -->|今天結束| H[/resume 命名 session]
+    C -->|今天結束| H["/resume" 命名 session]
 ```
 
 - **一個 session 做一件事**: 不要混合不同任務
@@ -987,28 +987,28 @@ flowchart TD
     START[開始工作] --> CHECK{今天做什麼?}
 
     CHECK -->|新專案| A1[clone + claude]
-    A1 --> A2[/init-repo]
-    A2 --> A3[/onboard]
+    A1 --> A2["/init-repo"]
+    A2 --> A3["/onboard"]
     A3 --> A4[由大到小學習]
 
     CHECK -->|開發 Feature| B1[checkout branch + claude]
-    B1 --> B2[Plan Mode + /task]
+    B1 --> B2["Plan Mode + /task"]
     B2 --> B3[精準指令實作]
-    B3 --> B4[/commit 小步快跑]
-    B4 --> B5[/review 自審]
-    B5 --> B6[/pr-desc + 開 PR]
+    B3 --> B4["/commit 小步快跑"]
+    B4 --> B5["/review 自審"]
+    B5 --> B6["/pr-desc + 開 PR"]
 
     CHECK -->|修 Bug| C1{知道位置?}
     C1 -->|是| C2[精準指令直接修]
-    C1 -->|否| C3[/bug 調查]
+    C1 -->|否| C3["/bug 調查"]
     C3 --> C2
-    C2 --> C4[/commit]
+    C2 --> C4["/commit"]
 
     CHECK -->|Review PR| D1[claude --from-pr N]
-    D1 --> D2[/review]
+    D1 --> D2["/review"]
     D2 --> D3[深入可疑處]
 
-    A4 --> END[/clear 切下一個任務]
+    A4 --> END["/clear 切下一個任務"]
     B6 --> END
     C4 --> END
     D3 --> END
