@@ -496,7 +496,7 @@ flowchart TD
     B --> C["/onboard" 第一次探索]
     C --> D[Claude 提問 - 你回答]
     D --> E[生成 CODEBASE.md + ONBOARDING.md]
-    E --> F{"日後再次 /onboard"}
+    E --> F["日後再次 /onboard"]
     F --> G[讀取既有 CODEBASE.md]
     G --> H[驗證是否過時 - 增量更新]
     H --> I[知識持續累積]
