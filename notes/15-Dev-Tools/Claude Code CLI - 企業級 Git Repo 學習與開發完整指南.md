@@ -4,35 +4,37 @@
 
 
 ## 目錄
-- [1. 核心概念: Context Window 與 Token 心態](#1-核心概念-context-window-與-token-心態)
+- [Claude Code CLI - 企業級 Git Repo 學習與開發完整指南](#claude-code-cli---企業級-git-repo-學習與開發完整指南)
+  - [目錄](#目錄)
+  - [1. 核心概念: Context Window 與 Token 心態](#1-核心概念-context-window-與-token-心態)
     - [1.1. Context Window 是你最重要的資源](#11-context-window-是你最重要的資源)
     - [1.2. Token 節省的核心心態](#12-token-節省的核心心態)
-- [2. 全域環境設定 (一台電腦只做一次)](#2-全域環境設定-一台電腦只做一次)
+  - [2. 全域環境設定 (一台電腦只做一次)](#2-全域環境設定-一台電腦只做一次)
     - [2.1. 安裝 Claude Code 與相依工具](#21-安裝-claude-code-與相依工具)
     - [2.2. 全域安全設定 ~/.claude/settings.json](#22-全域安全設定-claudesettingsjson)
     - [2.3. 全域 CLAUDE.md - 個人風格與技術背景](#23-全域-claudemd---個人風格與技術背景)
     - [2.4. 全域 Custom Commands](#24-全域-custom-commands)
-- [3. 專案級設定 (每個 Repo 做一次)](#3-專案級設定-每個-repo-做一次)
+  - [3. 專案級設定 (每個 Repo 做一次)](#3-專案級設定-每個-repo-做一次)
     - [3.1. 一鍵生成 CLAUDE.md 與 docs 分層](#31-一鍵生成-claudemd-與-docs-分層)
     - [3.2. 專案權限設定 .claude/settings.json](#32-專案權限設定-claudesettingsjson)
     - [3.3. 專案 Custom Commands 部署腳本](#33-專案-custom-commands-部署腳本)
-- [4. 學習階段: 理解陌生 Repo](#4-學習階段-理解陌生-repo)
+  - [4. 學習階段: 理解陌生 Repo](#4-學習階段-理解陌生-repo)
     - [4.1. Onboard 流程與持久化](#41-onboard-流程與持久化)
     - [4.2. 提問策略: 由大到小](#42-提問策略-由大到小)
-- [5. 開發階段: 高效寫 Code](#5-開發階段-高效寫-code)
+  - [5. 開發階段: 高效寫 Code](#5-開發階段-高效寫-code)
     - [5.1. Plan Mode - 先想再做](#51-plan-mode---先想再做)
     - [5.2. 精準指令與 Sub-agents](#52-精準指令與-sub-agents)
     - [5.3. Sub-agent 使用原則](#53-sub-agent-使用原則)
-- [6. Review 與 Commit 階段](#6-review-與-commit-階段)
+  - [6. Review 與 Commit 階段](#6-review-與-commit-階段)
     - [6.1. 自我 Code Review /review](#61-自我-code-review-review)
     - [6.2. 審查同事的 PR](#62-審查同事的-pr)
     - [6.3. Commit 規範 /commit](#63-commit-規範-commit)
     - [6.4. 開 PR 的完整流程](#64-開-pr-的完整流程)
-- [7. Token 節省實戰技巧](#7-token-節省實戰技巧)
+  - [7. Token 節省實戰技巧](#7-token-節省實戰技巧)
     - [7.1. 黃金法則速查表](#71-黃金法則速查表)
     - [7.2. Session 管理心法](#72-session-管理心法)
     - [7.3. Model 切換策略](#73-model-切換策略)
-- [8. 完整工作流程總覽: 常見場景](#8-完整工作流程總覽-常見場景)
+  - [8. 完整工作流程總覽: 常見場景](#8-完整工作流程總覽-常見場景)
     - [8.1. 場景 A: 第一天加入新專案](#81-場景-a-第一天加入新專案)
     - [8.2. 場景 B: 日常開發 Feature](#82-場景-b-日常開發-feature)
     - [8.3. 場景 C: 修 Bug (已知位置)](#83-場景-c-修-bug-已知位置)
@@ -627,20 +629,11 @@ Sub-agent 在獨立 context 中執行，不污染主 session，但本身也消�
 
 ### 6.2. 審查同事的 PR
 
-/review 的 Context Detection 會自動判斷審查範圍，三種用法:
+/review 的 Context Detection 會自動判斷審查範圍，兩種用法:
+
 
 ```bash
-# 用法一: --from-pr (推薦, 不需 checkout)
-# Claude 自動透過 gh pr diff 取得變更, 本地不需要 pull
-claude --from-pr 456
-```
-
-```text
-> /review
-```
-
-```bash
-# 用法二: 手動 checkout (需要本地跑測試驗證時)
+# 用法一: 手動 checkout (需要本地跑測試驗證時)
 gh pr checkout 456
 claude
 ```
@@ -650,7 +643,7 @@ claude
 ```
 
 ```text
-# 用法三: 指定特定檔案深入審查
+# 用法二: 指定特定檔案深入審查
 > /review src/services/payment.ts
 ```
 
@@ -661,7 +654,6 @@ claude
 > 重複的 event 有做冪等處理嗎?
 ```
 
-Session 會自動綁定到 PR。同事修改後需要 re-review 時，`claude --from-pr 456` 恢復 context 繼續討論。
 
 ### 6.3. Commit 規範 /commit
 
