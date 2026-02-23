@@ -1,11 +1,7 @@
----
-title: "聯準會降息機制 — 基準利率、通膨、CPI 與市場影響全解析"
-category: "20-Finance"
-tags: ["Macroeconomics", "Federal-Reserve", "Interest-Rate"]
-updated: "2026-02-24"
----
-
 # 聯準會降息機制 — 基準利率、通膨、CPI 與市場影響全解析
+
+> Updated: 2026-02-24 01:01
+
 
 ## 目錄
 - [聯準會降息機制 — 基準利率、通膨、CPI 與市場影響全解析](#聯準會降息機制--基準利率通膨cpi-與市場影響全解析)

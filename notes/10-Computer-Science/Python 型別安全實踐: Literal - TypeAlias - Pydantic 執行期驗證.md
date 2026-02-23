@@ -1,11 +1,7 @@
----
-title: "Python 型別安全實踐: Literal / TypeAlias / Pydantic 執行期驗證"
-category: "10-Computer-Science"
-tags: ["Python", "Type-Safety", "Pydantic"]
-updated: "2026-02-23"
----
-
 # Python 型別安全實踐: Literal / TypeAlias / Pydantic 執行期驗證
+
+> Updated: 2026-02-24 01:01
+
 
 ## 目錄
 - [Python 型別安全實踐: Literal / TypeAlias / Pydantic 執行期驗證](#python-型別安全實踐-literal--typealias--pydantic-執行期驗證)
