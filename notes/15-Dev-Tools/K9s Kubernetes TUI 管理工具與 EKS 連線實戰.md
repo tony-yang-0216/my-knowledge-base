@@ -4,27 +4,29 @@
 
 
 ## 目錄
-- [1. K9s 概述與安裝](#1-k9s-概述與安裝)
+- [K9s Kubernetes TUI 管理工具與 EKS 連線實戰](#k9s-kubernetes-tui-管理工具與-eks-連線實戰)
+  - [目錄](#目錄)
+  - [1. K9s 概述與安裝](#1-k9s-概述與安裝)
     - [1.1. K9s 是什麼](#11-k9s-是什麼)
     - [1.2. 安裝方式](#12-安裝方式)
     - [1.3. macOS CLT 版本不符問題](#13-macos-clt-版本不符問題)
-- [2. kubeconfig 設定與 EKS 連線](#2-kubeconfig-設定與-eks-連線)
+  - [2. kubeconfig 設定與 EKS 連線](#2-kubeconfig-設定與-eks-連線)
     - [2.1. 在 AWS Console 查找 Cluster 名稱與 Region](#21-在-aws-console-查找-cluster-名稱與-region)
     - [2.2. kubeconfig 取得方式](#22-kubeconfig-取得方式)
     - [2.3. 多叢集 kubeconfig 管理與覆蓋風險](#23-多叢集-kubeconfig-管理與覆蓋風險)
-- [3. AWS IAM 與 EKS 存取權限機制](#3-aws-iam-與-eks-存取權限機制)
+  - [3. AWS IAM 與 EKS 存取權限機制](#3-aws-iam-與-eks-存取權限機制)
     - [3.1. IAM User vs IAM Role](#31-iam-user-vs-iam-role)
     - [3.2. EKS 叢集授權名單機制](#32-eks-叢集授權名單機制)
     - [3.3. Assume Role 流程與驗證](#33-assume-role-流程與驗證)
     - [3.4. 連線問題排查流程](#34-連線問題排查流程)
-- [4. K9s 實戰操作場景](#4-k9s-實戰操作場景)
+  - [4. K9s 實戰操作場景](#4-k9s-實戰操作場景)
     - [4.1. 查看 Pod Log 抓 Bug](#41-查看-pod-log-抓-bug)
     - [4.2. 診斷 Pod 啟動失敗](#42-診斷-pod-啟動失敗)
     - [4.3. Shell 進入 Pod 除錯](#43-shell-進入-pod-除錯)
     - [4.4. 檢查環境變數與設定](#44-檢查環境變數與設定)
     - [4.5. 監控資源使用與重啟 Pod](#45-監控資源使用與重啟-pod)
     - [4.6. 檢查 Service 連線與叢集事件](#46-檢查-service-連線與叢集事件)
-- [5. K9s 快捷鍵速查表](#5-k9s-快捷鍵速查表)
+  - [5. K9s 快捷鍵速查表](#5-k9s-快捷鍵速查表)
 
 ## 1. K9s 概述與安裝
 
@@ -194,11 +196,11 @@ aws eks update-kubeconfig --name dataverse-pre-prod-eks --region us-west-2 \
 flowchart TD
     A["kubectl get nodes 報錯"] --> B["aws sts get-caller-identity"]
     B --> C{"有正常輸出?"}
-    C -->|"No"| D["AWS CLI 未登入 - 執行 aws configure 或 aws sso login"]
-    C -->|"Yes"| E{"ARN 是 user 還是 assumed-role?"}
-    E -->|"user"| F["IAM User 不在 EKS 授權名單"]
-    E -->|"assumed-role"| G["Role 不在 EKS 授權名單"]
-    F --> H["聯繫 DevOps 開通權限或取得可用 Role ARN"]
+    C -->|"No"| D["AWS CLI 未登入<br>執行 aws configure<br>或 aws sso login"]
+    C -->|"Yes"| E{"ARN 是 user<br>還是 assumed-role?"}
+    E -->|"user"| F["IAM User<br>不在 EKS 授權名單"]
+    E -->|"assumed-role"| G["Role<br>不在 EKS 授權名單"]
+    F --> H["聯繫 DevOps 開通權限<br>或取得可用 Role ARN"]
     G --> H
 ```
 
@@ -224,7 +226,7 @@ flowchart LR
     A["選到異常 pod"] --> B["按 d - describe"]
     A --> C["按 l - 看啟動 log"]
     B --> D["查看 Events 區塊"]
-    D --> E["常見原因: image pull 失敗 / OOM / health check 未過"]
+    D --> E["常見原因:<br>image pull 失敗/<br>OOM/<br>health check 未過"]
 ```
 
 ### 4.3. Shell 進入 Pod 除錯
