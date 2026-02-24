@@ -1,11 +1,7 @@
----
-title: "K9s Kubernetes TUI 管理工具與 EKS 連線實戰"
-category: "15-Dev-Tools"
-tags: ["Kubernetes", "AWS-EKS", "CLI"]
-updated: "2025-02-24"
----
-
 # K9s Kubernetes TUI 管理工具與 EKS 連線實戰
+
+> Updated: 2026-02-24 21:13
+
 
 ## 目錄
 - [1. K9s 概述與安裝](#1-k9s-概述與安裝)
