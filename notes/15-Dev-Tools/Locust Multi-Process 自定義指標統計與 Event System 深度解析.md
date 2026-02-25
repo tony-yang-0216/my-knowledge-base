@@ -1,11 +1,7 @@
----
-title: "Locust Multi-Process 自定義指標統計與 Event System 深度解析"
-category: "15-Dev-Tools"
-tags: ["Load Testing", "Locust", "Multi-Process"]
-updated: "2026-02-25"
----
-
 # Locust Multi-Process 自定義指標統計與 Event System 深度解析
+
+> Updated: 2026-02-26 01:10
+
 
 ## 目錄
 - [Locust Multi-Process 自定義指標統計與 Event System 深度解析](#locust-multi-process-自定義指標統計與-event-system-深度解析)
