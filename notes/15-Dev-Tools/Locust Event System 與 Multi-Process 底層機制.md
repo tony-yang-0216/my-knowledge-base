@@ -1,11 +1,7 @@
----
-title: "Locust Event System 與 Multi-Process 底層機制"
-category: "15-Dev-Tools"
-tags: ["Load Testing", "Locust", "Multi-Process"]
-updated: "2026-02-26"
----
-
 # Locust Event System 與 Multi-Process 底層機制
+
+> Updated: 2026-02-26 21:13
+
 
 ## 目錄
 - [1. Multi-Process 模式基礎](#1-multi-process-模式基礎)
@@ -190,7 +186,7 @@ sequenceDiagram
     Events->>Handler: "觸發 default_stats_handler"
     Note over Handler: "T=0.5ms"
     Handler->>Stats: "log_request(method=POST, content_length=1024)"
-    Note over Stats: "T=0.8ms - 立即更新<br>entries[(/api/chat, POST)]<br>num_requests: 1<br>total_content_length: 1024"
+    Note over Stats: "T=0.8ms - 立即更新<br>entries["(/api/chat, POST)"]<br>num_requests: 1<br>total_content_length: 1024"
 ```
 
 整條鏈路在 1ms 內完成，`fire()` -> handler 觸發 -> `log_request()` -> stats 更新，全部是同步執行。

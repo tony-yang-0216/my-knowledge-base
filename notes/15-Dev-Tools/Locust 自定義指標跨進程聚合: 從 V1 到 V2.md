@@ -1,11 +1,7 @@
----
-title: "Locust 自定義指標跨進程聚合: 從 V1 到 V2"
-category: "15-Dev-Tools"
-tags: ["Load Testing", "Locust", "Multi-Process"]
-updated: "2026-02-26"
----
-
 # Locust 自定義指標跨進程聚合: 從 V1 到 V2
+
+> Updated: 2026-02-26 21:13
+
 
 ## 目錄
 - [1. V1 方案: 虛擬 Stats Entry](#1-v1-方案-虛擬-stats-entry)
@@ -230,12 +226,12 @@ sequenceDiagram
     Task->>Fire: "fire(type=POST, length=1024)"
     Fire->>Handler: "觸發 handler"
     Handler->>WStats: "log_request()"
-    Note over WStats: "entries[(/api/chat, POST)]"
+    Note over WStats: "entries["(/api/chat, POST)"]"
 
     Task->>Fire: "fire(type=TOKEN, length=53)"
     Fire->>Handler: "觸發 handler"
     Handler->>WStats: "log_request()"
-    Note over WStats: "entries[(token_count, TOKEN)]"
+    Note over WStats: "entries["(token_count, TOKEN)"]"
 
     Note over ZMQ: "T=3s 定期同步"
     WStats->>ZMQ: "序列化整個 entries dict"
