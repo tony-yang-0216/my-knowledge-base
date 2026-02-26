@@ -1,11 +1,7 @@
----
-title: "Linux Standard Streams 與 I/O Redirection 完整指南"
-category: "10-Computer-Science"
-tags: ["OS", "Shell", "POSIX"]
-updated: "2026-02-26"
----
-
 # Linux Standard Streams 與 I/O Redirection 完整指南
+
+> Updated: 2026-02-26 23:45
+
 
 ## 目錄
 - [Linux Standard Streams 與 I/O Redirection 完整指南](#linux-standard-streams-與-io-redirection-完整指南)
