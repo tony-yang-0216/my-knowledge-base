@@ -1,11 +1,7 @@
----
-title: "Locust 基礎概念與執行模型"
-category: "15-Dev-Tools"
-tags: ["Load Testing", "Locust", "gevent"]
-updated: "2026-02-27"
----
-
 # Locust 基礎概念與執行模型
+
+> Updated: 2026-02-27 10:42
+
 
 ## 目錄
 - [Locust 基礎概念與執行模型](#locust-基礎概念與執行模型)

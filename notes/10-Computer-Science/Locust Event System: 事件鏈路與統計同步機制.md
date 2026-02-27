@@ -1,11 +1,7 @@
----
-title: "Locust Event System: 事件鏈路與統計同步機制"
-category: "10-Computer-Science"
-tags: ["Locust", "Event System", "Multi-Process"]
-updated: "2026-02-27"
----
-
 # Locust Event System: 事件鏈路與統計同步機制
+
+> Updated: 2026-02-27 10:42
+
 
 ## 目錄
 - [Locust Event System: 事件鏈路與統計同步機制](#locust-event-system-事件鏈路與統計同步機制)
@@ -123,7 +119,7 @@ sequenceDiagram
     Events->>Handler: "觸發 default_stats_handler"
     Note over Handler: "T=0.5ms"
     Handler->>Stats: "log_request(method=POST, content_length=1024)"
-    Note over Stats: "T=0.8ms - 立即更新<br>entries[(/api/chat, POST)]<br>num_requests: 1<br>total_content_length: 1024"
+    Note over Stats: "T=0.8ms - 立即更新<br>entries["(/api/chat, POST)"]<br>num_requests: 1<br>total_content_length: 1024"
 ```
 
 整條鏈路在 1ms 內完成，全部是同步執行。`log_request()` 裡的 `+=` 是純 CPU 操作，gevent 不會在這段期間切換協程，所以不需要 Lock。

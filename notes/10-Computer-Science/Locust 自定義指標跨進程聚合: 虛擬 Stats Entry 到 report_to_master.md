@@ -1,11 +1,7 @@
----
-title: "Locust 自定義指標跨進程聚合: 虛擬 Stats Entry 到 report_to_master"
-category: "10-Computer-Science"
-tags: ["Locust", "Multi-Process", "Concurrency"]
-updated: "2026-02-27"
----
-
 # Locust 自定義指標跨進程聚合: 虛擬 Stats Entry 到 report_to_master
+
+> Updated: 2026-02-27 10:42
+
 
 ## 目錄
 - [Locust 自定義指標跨進程聚合: 虛擬 Stats Entry 到 report\_to\_master](#locust-自定義指標跨進程聚合-虛擬-stats-entry-到-report_to_master)
@@ -186,12 +182,12 @@ sequenceDiagram
     Task->>Fire: "fire(type=POST, length=1024)"
     Fire->>Handler: "觸發 handler"
     Handler->>WStats: "log_request()"
-    Note over WStats: "entries[(/api/chat, POST)]"
+    Note over WStats: "entries["(/api/chat, POST)"]"
 
     Task->>Fire: "fire(type=TOKEN, length=53)"
     Fire->>Handler: "觸發 handler"
     Handler->>WStats: "log_request()"
-    Note over WStats: "entries[(token_count, TOKEN)]"
+    Note over WStats: "entries["(token_count, TOKEN)"]"
 
     Note over ZMQ: "T=3s 定期同步"
     WStats->>ZMQ: "序列化整個 entries dict"
