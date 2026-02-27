@@ -1,11 +1,7 @@
----
-title: "Webhook 機制完整解析 - 從原理到實作與安全性實踐"
-category: "10-Computer-Science"
-tags: ["Backend", "System-Integration", "API"]
-updated: "2026-02-28"
----
-
 # Webhook 機制完整解析 - 從原理到實作與安全性實踐
+
+> Updated: 2026-02-28 04:31
+
 
 ## 目錄
 - [Webhook 機制完整解析 - 從原理到實作與安全性實踐](#webhook-機制完整解析---從原理到實作與安全性實踐)

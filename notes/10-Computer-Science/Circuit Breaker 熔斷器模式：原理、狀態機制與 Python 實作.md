@@ -1,11 +1,7 @@
----
-title: "Circuit Breaker 熔斷器模式：原理、狀態機制與 Python 實作"
-category: "10-Computer-Science"
-tags: ["Design Pattern", "Resilience", "Microservices"]
-updated: "2026-02-28"
----
-
 # Circuit Breaker 熔斷器模式：原理、狀態機制與 Python 實作
+
+> Updated: 2026-02-28 04:31
+
 
 ## 目錄
 - [Circuit Breaker 熔斷器模式：原理、狀態機制與 Python 實作](#circuit-breaker-熔斷器模式原理狀態機制與-python-實作)
