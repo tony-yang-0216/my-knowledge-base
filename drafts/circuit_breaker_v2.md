@@ -1,7 +1,11 @@
+---
+title: "Circuit Breaker 熔斷器模式：原理、狀態機制與 Python 實作"
+category: "10-Computer-Science"
+tags: ["Design Pattern", "Resilience", "Microservices"]
+updated: "2026-02-28"
+---
+
 # Circuit Breaker 熔斷器模式：原理、狀態機制與 Python 實作
-
-> Updated: 2026-02-28 04:31
-
 
 ## 目錄
 - [Circuit Breaker 熔斷器模式：原理、狀態機制與 Python 實作](#circuit-breaker-熔斷器模式原理狀態機制與-python-實作)
@@ -18,7 +22,7 @@
     - [4.1. 基本用法與完整例外處理](#41-基本用法與完整例外處理)
     - [4.2. 失敗計數是跨請求累積](#42-失敗計數是跨請求累積)
     - [4.3. Circuit Breaker vs Retry 的職責分離](#43-circuit-breaker-vs-retry-的職責分離)
-    - [4.4. aiobreaker：async 環境的選擇](#44-aiobreakerasync-環境的選擇)
+    - [4.4. pybreaker vs aiobreaker：同步與非同步的差異](#44-pybreaker-vs-aiobreaker同步與非同步的差異)
   - [5. 常見實作框架對比](#5-常見實作框架對比)
 
 ## 1. 問題背景：級聯故障
@@ -75,12 +79,12 @@ flowchart TD
     D -->|"No"| F["失敗計數器 +1"]
     F --> G{"超過閾值?"}
     G -->|"Yes"| H["切換到 Open"]
-    G -->|"No"| E
-    B -->|"Open"| I["直接回傳 Fallback"]
-    B -->|"Half-Open"| J["放行少量試探請求"]
-    J --> K{"試探成功?"}
-    K -->|"Yes"| L["切換回 Closed"]
-    K -->|"No"| H
+    G -->|"No"| I["回傳錯誤或 Fallback"]
+    B -->|"Open"| J["直接回傳 Fallback"]
+    B -->|"Half-Open"| K["放行少量試探請求"]
+    K --> L{"試探成功?"}
+    L -->|"Yes"| M["切換回 Closed"]
+    L -->|"No"| H
 ```
 
 ## 3. 關鍵參數詳解
@@ -199,11 +203,69 @@ def call_downstream_service():
 
 這樣每次呼叫會先重試最多 3 次，3 次都失敗才算 breaker 的一次失敗。兩層各司其職。
 
-### 4.4. aiobreaker：async 環境的選擇
+### 4.4. pybreaker vs aiobreaker：同步與非同步的差異
 
-`pybreaker` 是同步的，內部使用 threading lock。如果 server 是用 FastAPI / aiohttp 這類 async 框架，在 async function 裡用 pybreaker 會阻塞 event loop，因為 IO 等待期間無法將控制權交還給 event loop 去處理其他請求，等於把 async 的效能優勢廢掉。
+pybreaker 內部使用 `threading.Lock` 保護共享狀態（失敗計數器、breaker 狀態），這是一個同步阻塞鎖。在 async 環境（FastAPI / aiohttp）中，只有單一 thread 跑 event loop，`threading.Lock.acquire()` 會直接卡住整個 thread，導致 event loop 凍住，所有其他 coroutine 全部停擺。再加上 pybreaker 搭配的是同步的 `requests.get()`，IO 等待期間也是阻塞的，完全抵銷了 async 架構的優勢。
 
-`aiobreaker` 把內部機制換成 asyncio lock，請求送出後等待 IO 的期間，event loop 可以去處理其他請求，等 IO 回來了再繼續判斷成功或失敗、更新 breaker 計數。
+aiobreaker 使用 `asyncio.Lock`，搭配 `aiohttp` 等非同步 HTTP client。碰到 IO 等待時透過 `await` 把控制權交回 event loop，讓其他 coroutine 可以繼續被調度執行。IO 回來後再恢復執行，拿回 lock 進行計數器更新等 CPU 操作。
+
+**Async 環境 - pybreaker（問題場景）：整個 thread 被凍住**
+
+```mermaid
+sequenceDiagram
+    participant EL as "Event Loop"
+    participant A as "Coroutine A - @breaker"
+    participant B as "Coroutine B"
+    participant DS as "下游服務"
+
+    EL->>A: "調度執行"
+    A->>A: "threading.lock.acquire()"
+    A->>DS: "requests.get() - 同步 IO"
+    Note over EL,B: "整個 thread 凍住 - Event Loop 被卡死 - Coroutine B 無法被調度"
+    DS-->>A: "回應（或超時）"
+    A->>A: "計數器更新 + lock.release()"
+    A-->>EL: "歸還控制權"
+    EL->>B: "現在才能調度 B"
+```
+
+**Async 環境 - aiobreaker（正確做法）：event loop 自由調度**
+
+```mermaid
+sequenceDiagram
+    participant EL as "Event Loop"
+    participant A as "Coroutine A - @breaker"
+    participant B as "Coroutine B"
+    participant DS as "下游服務"
+
+    EL->>A: "調度執行"
+    A->>A: "await asyncio.lock.acquire()"
+    A->>DS: "await aiohttp.get() - 非同步 IO"
+    A-->>EL: "IO 等待中 - 釋放控制權"
+    EL->>B: "調度 Coroutine B 執行"
+    DS-->>EL: "IO 回來了"
+    EL->>A: "恢復 Coroutine A"
+    A->>A: "計數器更新 + lock.release()"
+```
+
+**Sync 環境 - pybreaker（多 thread，正常運作）**
+
+```mermaid
+sequenceDiagram
+    participant T1 as "Thread 1 - @breaker"
+    participant T2 as "Thread 2 - @breaker"
+    participant DS as "下游服務"
+
+    T1->>T1: "lock.acquire() - 拿到鎖"
+    T1->>DS: "requests.get()"
+    Note over T2: "T1 卡住沒關係 - T2 是獨立 thread"
+    T2->>T2: "處理其他工作"
+    T2->>T2: "要拿 lock - 等待中"
+    DS-->>T1: "回應"
+    T1->>T1: "計數器更新 + lock.release()"
+    T2->>T2: "拿到 lock - 繼續執行"
+```
+
+總結選擇依據：async 框架（FastAPI / aiohttp）用 aiobreaker，避免同步阻塞摧毀 event loop 的併發能力；sync 框架（Flask / Django + Gunicorn thread workers）用 pybreaker，多 thread 環境下同步鎖完全正常運作。
 
 ```python
 # pybreaker（同步，搭配 Flask / Django）
@@ -220,8 +282,6 @@ async def call_service():
         async with session.get("https://api.example.com") as resp:
             return await resp.json()
 ```
-
-API 用法幾乎一樣，狀態機邏輯也完全相同，純粹是同步/非同步的適配差異。選哪個取決於你的 server 架構是哪種模型。
 
 ## 5. 常見實作框架對比
 
