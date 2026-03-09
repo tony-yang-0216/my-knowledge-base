@@ -1,11 +1,7 @@
----
-title: "Auth0 Client Credentials Flow - access_denied 403 排查與修復"
-category: "10-Computer-Science"
-tags: ["Auth0", "OAuth2", "Backend"]
-updated: "2026-03-09"
----
-
 # Auth0 Client Credentials Flow - access_denied 403 排查與修復
+
+> Updated: 2026-03-09 21:10
+
 
 ## 目錄
 - [1. 問題情境與錯誤現象](#1-問題情境與錯誤現象)
