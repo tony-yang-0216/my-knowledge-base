@@ -1,11 +1,7 @@
----
-title: "Kubernetes PVC Not Bound 死鎖診斷：Helm Hook 與 WaitForFirstConsumer 衝突排查指南"
-category: "15-Dev-Tools"
-tags: ["Kubernetes", "Helm", "Debugging"]
-updated: "2026-03-09"
----
-
 # Kubernetes PVC Not Bound 死鎖診斷：Helm Hook 與 WaitForFirstConsumer 衝突排查指南
+
+> Updated: 2026-03-09 11:26
+
 
 ## 目錄
 - [1. 讀懂錯誤訊息](#1-讀懂錯誤訊息)
