@@ -1,11 +1,7 @@
----
-title: "Redis 連線池耗盡與驚群效應解決方案"
-category: "10-Computer-Science"
-tags: ["Redis", "Concurrency", "Performance"]
-updated: "2026-03-09"
----
-
 # Redis 連線池耗盡與驚群效應解決方案
+
+> Updated: 2026-03-09 16:09
+
 
 ## 目錄
 - [1. 基本概念](#1-基本概念)
