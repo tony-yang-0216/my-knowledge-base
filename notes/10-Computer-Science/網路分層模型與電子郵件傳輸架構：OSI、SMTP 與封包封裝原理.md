@@ -1,11 +1,7 @@
----
-title: "網路分層模型與電子郵件傳輸架構：OSI、SMTP 與封包封裝原理"
-category: "10-Computer-Science"
-tags: ["Networking", "SMTP", "Protocol"]
-updated: "2026-03-16"
----
-
 # 網路分層模型與電子郵件傳輸架構：OSI、SMTP 與封包封裝原理
+
+> Updated: 2026-03-16 10:41
+
 
 ## 目錄
 - [1. 協定的本質](#1-協定的本質)
