@@ -1,11 +1,7 @@
----
-title: "IPv4、IPv6、VPC、CIDR 與 NAT 核心網路概念：以 K8s/EKS 為例"
-category: "10-Computer-Science"
-tags: ["Networking", "Kubernetes", "Cloud"]
-updated: "2026-03-16"
----
-
 # IPv4、IPv6、VPC、CIDR 與 NAT 核心網路概念：以 K8s/EKS 為例
+
+> Updated: 2026-03-16 13:50
+
 
 ## 目錄
 - [1. 整體架構全覽](#1-整體架構全覽)
