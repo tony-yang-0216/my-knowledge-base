@@ -1,11 +1,7 @@
----
-title: "Web Authentication: Traditional Session vs SSO 完整入門指南"
-category: "10-Computer-Science"
-tags: ["Authentication", "Backend", "Security"]
-updated: "2026-03-20"
----
-
 # Web Authentication: Traditional Session vs SSO 完整入門指南
+
+> Updated: 2026-03-20 18:50
+
 
 ## 目錄
 - [1. 基礎概念：為什麼需要 Authentication](#1-基礎概念為什麼需要-authentication)
