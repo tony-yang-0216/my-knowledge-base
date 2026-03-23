@@ -1,11 +1,7 @@
----
-title: "Keycloak OAuth2 授權流程：核心概念、角色與四種 Grant Type 完整指南"
-category: "10-Computer-Science"
-tags: ["Security", "OAuth2", "Backend"]
-updated: "2026-03-23"
----
-
 # Keycloak OAuth2 授權流程：核心概念、角色與四種 Grant Type 完整指南
+
+> Updated: 2026-03-23 11:37
+
 
 ## 目錄
 - [1. 為什麼需要 OAuth2](#1-為什麼需要-oauth2)
